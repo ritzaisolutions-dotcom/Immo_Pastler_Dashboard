@@ -1,62 +1,55 @@
-# Supabase Setup — Pastler Dashboard
+# Supabase Setup — Pastler Dashboard (shared with Haller)
 
-## 1. Create Project
+**Project:** `htyeflqymmbcjhvknjoe` (eu-central-1) — same instance as Haller IM24 dashboard.
 
-- **Region:** `eu-central-1` (Frankfurt) — mandatory for DSGVO
-- **Name:** Pastler Dashboard
+Pastler uses **prefixed tables** so Haller data is untouched:
 
-## 2. Run Migrations
+| Pastler | Haller (unchanged) |
+|---------|-------------------|
+| `pastler_inserate` | `inserate` (IS24) |
+| `pastler_mieter` | `leads` |
+| `pastler_todos` | `besichtigungsslots` |
+| `pastler_emails` | — |
 
-In Supabase SQL Editor, run in order:
+## RLS Policies (003 + 004)
 
-1. [`supabase/schema.sql`](./schema.sql) — tables + RLS
-2. [`supabase/seed.sql`](./seed.sql) — test data
+Applied on `pastler_*` tables:
 
-## 3. Verify RLS
+- **Eigentümer:** filtered by `eigentuemer_email = auth.email()`
+- **Mitarbeiter:** full access via `app_metadata.role = 'mitarbeiter'`
+- **pastler_emails:** no authenticated policy (service role / n8n only)
 
-```sql
-SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
-```
+Broad `staff_* USING (true)` policies were removed (004) so Eigentümer filtering works per IMPLEMENTATION_PLAN Step 4 audit.
 
-All 4 tables must show `rowsecurity = true`.
+Migrations:
 
-## 4. Create Auth Users
+1. [`002_pastler_schema.sql`](./migrations/002_pastler_schema.sql)
+2. [`003_pastler_rls_claude.sql`](./migrations/003_pastler_rls_claude.sql)
+3. [`004_drop_staff_true_policies.sql`](./migrations/004_drop_staff_true_policies.sql)
 
-### Mitarbeiter (internal staff)
+## 2. Auth
 
-Create user in Supabase Auth → Users → Add user.
-
-Set **App Metadata:**
-```json
-{ "role": "mitarbeiter" }
-```
-
-### Eigentümer (optional test)
-
-Use email matching seed data, e.g. `hans.mueller@example.com`.
-
-## 5. Environment Variables
-
-Copy from Supabase → Settings → API:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-## 6. Auth Configuration
+Use the **same Supabase Auth users** as the Haller dashboard (staff login).
 
 Supabase → Authentication → URL Configuration:
 
-- **Site URL:** production domain (or `http://localhost:3000` for dev)
-- **Redirect URLs:** add `/auth/callback`
+- **Site URL:** `https://immo-pastler-dashboard.vercel.app` (or `http://localhost:3000` for dev)
+- **Redirect URLs:** add `/auth/callback` for each domain
 
-For internal tool: disable email confirmations.
+## 3. Environment Variables
 
-## 7. Security Verification
+Copy from [`.env.example`](../.env.example) into `.env.local`:
 
-- Anon key + REST API → `inserate` returns 0 rows (RLS)
-- Anon key + REST API → `emails` returns 0 rows (no policy)
-- Project region shows `eu-central-1` in database host URL
+```
+NEXT_PUBLIC_SUPABASE_URL=https://htyeflqymmbcjhvknjoe.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<server-only>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+## 4. Verify
+
+```sql
+SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
+-- Must include pastler_* AND original leads/inserate/besichtigungsslots
+```
