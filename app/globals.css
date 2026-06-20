@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --navy: #1a2744;
+  --navy-deep: #0d1828;
+  --navy-mid: #243258;
+  --gold: #c4a962;
+  --gold-light: #d4bf8a;
+  --gold-pale: #f5efd8;
+  --warm-white: #f5f3ef;
+  --white: #ffffff;
+  --border: #e5e1da;
+  --border-strong: #cec9c1;
+  --text-primary: #1a1a1a;
+  --text-secondary: #7a756f;
+  --text-hint: #8a857e;
+  --success: #2d6a4f;
+  --warning: #92400e;
+  --info: #1a3a5c;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-navy-mid: var(--navy-mid);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-pale: var(--gold-pale);
+  --color-warm-white: var(--warm-white);
+  --color-white: var(--white);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-hint: var(--text-hint);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-playfair);
+  --radius-button: 2px;
+  --radius-card: 4px;
+  --radius-badge: 4px;
+}
+
+body {
+  background: var(--warm-white);
+  color: var(--text-primary);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+}
