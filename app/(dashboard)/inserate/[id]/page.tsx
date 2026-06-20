@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 import TodoCard from "@/components/TodoCard";
 import {
@@ -20,19 +21,19 @@ export default async function InseratDetailPage({
   const supabase = await createClient();
 
   const { data: inserat } = await supabase
-    .from("inserate")
+    .from(TABLES.inserate)
     .select("*")
     .eq("id", id)
     .maybeSingle();
 
   const [{ data: mieterList }, { data: todosList }] = await Promise.all([
     supabase
-      .from("mieter")
+      .from(TABLES.mieter)
       .select("*")
       .eq("inserat_id", id)
       .order("name", { ascending: true }),
     supabase
-      .from("todos")
+      .from(TABLES.todos)
       .select("*")
       .eq("inserat_id", id)
       .order("created_at", { ascending: false }),

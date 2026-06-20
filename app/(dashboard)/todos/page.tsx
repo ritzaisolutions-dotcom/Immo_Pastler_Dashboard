@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import TodoCard from "@/components/TodoCard";
 import TodoFilterBar from "@/components/TodoFilterBar";
 import { type TodoWithMieter } from "@/lib/types";
@@ -18,8 +19,8 @@ export default async function TodosPage({ searchParams }: TodosPageProps) {
   const supabase = await createClient();
 
   let query = supabase
-    .from("todos")
-    .select("*, mieter(name)")
+    .from(TABLES.todos)
+    .select(`*, mieter:${TABLES.mieter}(name)`)
     .order("created_at", { ascending: false });
 
   if (params.kategorie) {

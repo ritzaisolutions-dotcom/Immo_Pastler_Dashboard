@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 import TodoCard from "@/components/TodoCard";
 import { formatDate, type TodoWithMieter } from "@/lib/types";
@@ -19,25 +20,25 @@ export default async function DashboardPage() {
     { data: recentTodos },
   ] = await Promise.all([
     supabase
-      .from("todos")
+      .from(TABLES.todos)
       .select("*", { count: "exact", head: true })
       .eq("status", "offen"),
     supabase
-      .from("todos")
+      .from(TABLES.todos)
       .select("*", { count: "exact", head: true })
       .eq("prioritaet", "hoch")
       .neq("status", "erledigt"),
     supabase
-      .from("todos")
+      .from(TABLES.todos)
       .select("*", { count: "exact", head: true })
       .eq("faellig_at", today),
     supabase
-      .from("mieter")
+      .from(TABLES.mieter)
       .select("*", { count: "exact", head: true })
       .eq("status", "aktiv"),
     supabase
-      .from("todos")
-      .select("*, mieter(name)")
+      .from(TABLES.todos)
+      .select(`*, mieter:${TABLES.mieter}(name)`)
       .order("created_at", { ascending: false })
       .limit(10),
   ]);

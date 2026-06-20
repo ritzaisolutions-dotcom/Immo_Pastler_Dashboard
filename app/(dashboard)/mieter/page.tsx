@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 import MieterSearch from "@/components/MieterSearch";
 import { type MieterWithInserat } from "@/lib/types";
@@ -13,8 +14,8 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
   const supabase = await createClient();
 
   let query = supabase
-    .from("mieter")
-    .select("*, inserat:inserate(adresse, stadt)")
+    .from(TABLES.mieter)
+    .select(`*, inserat:${TABLES.inserate}(adresse, stadt)`)
     .order("name", { ascending: true });
 
   if (q) {
@@ -27,7 +28,7 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
   const openTodoCounts = await Promise.all(
     mieter.map(async (m) => {
       const { count } = await supabase
-        .from("todos")
+        .from(TABLES.todos)
         .select("*", { count: "exact", head: true })
         .eq("mieter_id", m.id)
         .neq("status", "erledigt");

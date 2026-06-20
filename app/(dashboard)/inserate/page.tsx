@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 
 export default async function InseratePage() {
   const supabase = await createClient();
 
   const { data: inserateList } = await supabase
-    .from("inserate")
+    .from(TABLES.inserate)
     .select("*")
     .order("adresse", { ascending: true });
 
@@ -17,11 +18,11 @@ export default async function InseratePage() {
       const [{ count: mieterCount }, { count: openTodosCount }] =
         await Promise.all([
           supabase
-            .from("mieter")
+            .from(TABLES.mieter)
             .select("*", { count: "exact", head: true })
             .eq("inserat_id", inserat.id),
           supabase
-            .from("todos")
+            .from(TABLES.todos)
             .select("*", { count: "exact", head: true })
             .eq("inserat_id", inserat.id)
             .neq("status", "erledigt"),

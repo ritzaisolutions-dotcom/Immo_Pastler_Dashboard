@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { TABLES } from "@/lib/supabase/tables";
 import { isTodoStatus } from "@/lib/types";
 
 export async function PATCH(
@@ -34,7 +35,7 @@ export async function PATCH(
   }
 
   const { data: existing, error: selectError } = await supabase
-    .from("todos")
+    .from(TABLES.todos)
     .select("id")
     .eq("id", id)
     .maybeSingle();
@@ -49,7 +50,7 @@ export async function PATCH(
   };
 
   const { error: updateError } = await supabase
-    .from("todos")
+    .from(TABLES.todos)
     .update(updatePayload)
     .eq("id", id);
 
