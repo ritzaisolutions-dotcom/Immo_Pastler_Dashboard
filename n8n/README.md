@@ -1,21 +1,30 @@
 # n8n Email → Todo Pipeline
 
 **Instance:** `https://n8n.ritz-ai.solutions`  
-**Purpose:** IMAP inbox → Supabase `emails` → Mistral extraction → `todos`
+**Supabase:** `htyeflqymmbcjhvknjoe` (shared with Haller) — **service role key** required  
+**Purpose:** IMAP inbox → `pastler_emails` → Mistral extraction → `pastler_todos`
+
+## Table Mapping (Shared DB)
+
+| CLAUDE / Plan name | Actual table |
+|--------------------|--------------|
+| `emails` | `pastler_emails` |
+| `mieter` | `pastler_mieter` |
+| `todos` | `pastler_todos` |
 
 ## Workflow 1: Email Ingestion (9 nodes)
 
 | # | Node | Configuration |
 |---|------|---------------|
 | 1 | IMAP Trigger | Poll every 5 min; mark as read; credentials in n8n vault |
-| 2 | Supabase getAll | `emails` WHERE `message_id = {{ $json.messageId }}` |
+| 2 | Supabase getAll | `pastler_emails` WHERE `message_id = {{ $json.messageId }}` |
 | 3 | IF | `{{ $json.length > 0 }}` → true: Stop (NoOp); false: continue |
-| 4 | Supabase insert | `emails`: message_id, von_email, von_name, betreff, inhalt_text, empfangen_at |
-| 5 | Supabase getAll | `mieter` WHERE `email = {{ $('Node 4').item.json.von_email }}` |
+| 4 | Supabase insert | `pastler_emails`: message_id, von_email, von_name, betreff, inhalt_text, empfangen_at |
+| 5 | Supabase getAll | `pastler_mieter` WHERE `email = {{ $('Node 4').item.json.von_email }}` |
 | 6 | LLM Chain | Mistral `small-latest`, `continueOnFail: true` |
 | 7 | Code Node | JSON parse + fallback (see below) |
-| 8 | Supabase insert | `todos` with fields from Node 7 |
-| 9 | Supabase update | `emails` SET `verarbeitet = true` WHERE `id = {{ $('Node 4').item.json.id }}` |
+| 8 | Supabase insert | `pastler_todos` with fields from Node 7 |
+| 9 | Supabase update | `pastler_emails` SET `verarbeitet = true` WHERE `id = {{ $('Node 4').item.json.id }}` |
 | 10 | IF (optional) | `prioritaet === 'hoch'` → Telegram alert (no inhalt_text) |
 
 ### Mistral Prompt
@@ -69,7 +78,7 @@ return [{
 ## Workflow 2: 90-Day Email Purge (Cron)
 
 - **Schedule:** Daily at 02:00
-- **SQL:** `UPDATE emails SET inhalt_text = NULL WHERE created_at < NOW() - INTERVAL '90 days'`
+- **SQL:** `UPDATE pastler_emails SET inhalt_text = NULL WHERE created_at < NOW() - INTERVAL '90 days'`
 
 ## Security Checklist
 
