@@ -91,3 +91,6 @@ UPDATE public.pastler_todos t SET
   zuordnung_konfidenz = e.zuordnung_konfidenz
 FROM public.pastler_emails e
 WHERE t.email_id = e.id;
+
+-- ─── 3d: Pipeline-Lücken (Todos, Partner-Entwürfe, verarbeitet-Flag) ───────
+-- Vollständig in supabase/scripts/repair_pipeline_gaps.sql / Migration 012

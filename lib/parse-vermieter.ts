@@ -16,10 +16,10 @@ function trimOrNull(v: unknown): string | null {
 
 export function parseVermieterBody(body: VermieterBody) {
   if (typeof body.name !== "string" || !body.name.trim()) {
-    return { error: "name required" as const };
+    return { error: "Name ist erforderlich" as const };
   }
   if (typeof body.email !== "string" || !body.email.trim()) {
-    return { error: "email required" as const };
+    return { error: "E-Mail ist erforderlich" as const };
   }
 
   return {

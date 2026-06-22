@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { mapDbError } from "@/lib/api-errors";
 import { parseInseratBody } from "@/lib/parse-inserat";
 import { TABLES } from "@/lib/supabase/tables";
 
@@ -22,7 +23,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 400 });
+    return NextResponse.json({ error: mapDbError(error) }, { status: 400 });
   }
 
   return NextResponse.json({ ok: true });

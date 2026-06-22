@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { mapDbError } from "@/lib/api-errors";
 import { parseVermieterBody } from "@/lib/parse-vermieter";
 import { TABLES } from "@/lib/supabase/tables";
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Insert failed" }, { status: 400 });
+    return NextResponse.json({ error: mapDbError(error) }, { status: 400 });
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

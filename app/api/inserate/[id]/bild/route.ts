@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { mapUploadError } from "@/lib/api-errors";
 import {
   INSERAT_IMAGE_MAX_BYTES,
   INSERAT_IMAGE_MIME_TYPES,
@@ -18,15 +19,15 @@ export async function POST(request: Request, context: RouteContext) {
   const file = formData.get("file");
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "file required" }, { status: 400 });
+    return NextResponse.json({ error: mapUploadError("file required") }, { status: 400 });
   }
 
   if (!INSERAT_IMAGE_MIME_TYPES.includes(file.type as (typeof INSERAT_IMAGE_MIME_TYPES)[number])) {
-    return NextResponse.json({ error: "invalid file type" }, { status: 400 });
+    return NextResponse.json({ error: mapUploadError("invalid file type") }, { status: 400 });
   }
 
   if (file.size > INSERAT_IMAGE_MAX_BYTES) {
-    return NextResponse.json({ error: "file too large" }, { status: 400 });
+    return NextResponse.json({ error: mapUploadError("file too large") }, { status: 400 });
   }
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
@@ -41,7 +42,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
 
   if (uploadError) {
-    return NextResponse.json({ error: "Upload failed" }, { status: 400 });
+    return NextResponse.json({ error: mapUploadError("Upload failed") }, { status: 400 });
   }
 
   const { data: urlData } = auth.supabase.storage
@@ -56,7 +57,7 @@ export async function POST(request: Request, context: RouteContext) {
     .eq("id", id);
 
   if (updateError) {
-    return NextResponse.json({ error: "Update failed" }, { status: 400 });
+    return NextResponse.json({ error: mapUploadError("Update failed") }, { status: 400 });
   }
 
   return NextResponse.json({ bild_url });

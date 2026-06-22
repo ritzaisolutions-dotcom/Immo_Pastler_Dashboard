@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
-import PartnerForm from "@/components/PartnerForm";
 import StammdatenProfil from "@/components/StammdatenProfil";
 import Badge from "@/components/Badge";
 import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { TABLES } from "@/lib/supabase/tables";
 import { gewerkLabel, nachrichtStatusLabel, type Partner, type PartnerNachricht } from "@/lib/types";
@@ -62,7 +62,15 @@ export default async function PartnerDetailPage({ params }: PartnerDetailPagePro
         <ArrowLeft className="h-4 w-4" />
         Zurück zu Partner
       </Link>
-      <PageHeader title={partner.firma} subtitle={partner.ansprechpartner} />
+      <PageHeader
+        title={partner.firma}
+        subtitle={partner.ansprechpartner}
+        actions={
+          <Link href={`/partner/${id}/bearbeiten`}>
+            <Button variant="secondary">Bearbeiten</Button>
+          </Link>
+        }
+      />
 
       <Card className="mb-6">
         <CardBody>
@@ -143,15 +151,6 @@ export default async function PartnerDetailPage({ params }: PartnerDetailPagePro
               </TableBody>
             </DataTable>
           )}
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <h2 className="font-medium text-text-primary">Bearbeiten</h2>
-        </CardHeader>
-        <CardBody>
-          <PartnerForm partner={partner} />
         </CardBody>
       </Card>
     </div>

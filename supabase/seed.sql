@@ -389,6 +389,14 @@ INSERT INTO pastler_partner_nachrichten (id, todo_id, partner_id, betreff, inhal
     'Schlüsselnotöffnung — Rheinweg 45, EG',
     E'Sehr geehrte Damen und Herren,\n\nbitte führen Sie eine Schlüsselnotöffnung durch:\n\nObjekt: Rheinweg 45, 56073 Koblenz, EG\nMieter: Michael Braun, Tel. +49 261 345678\n\nBitte Rechnung an Pastler Immobilienberatung.\n\nMit freundlichen Grüßen',
     'entwurf'
+  ),
+  (
+    '66666666-6666-6666-6666-666666666604',
+    '33333333-3333-3333-3333-333333333305',
+    '44444444-4444-4444-4444-444444444403',
+    'Reinigung Mülltonnenbereich — Rheinweg 45',
+    E'Sehr geehrte Damen und Herren,\n\nunser Mieter meldet einen überfüllten Mülltonnenbereich im Hinterhof.\n\nObjekt: Rheinweg 45, 56073 Koblenz\nBitte um zeitnahe Reinigung.\n\nMit freundlichen Grüßen\nPastler Immobilienberatung',
+    'entwurf'
   )
 ON CONFLICT (id) DO UPDATE SET
   todo_id = EXCLUDED.todo_id,

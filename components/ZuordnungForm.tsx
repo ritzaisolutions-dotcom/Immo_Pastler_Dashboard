@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import FormErrorBanner from "@/components/FormErrorBanner";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 
@@ -51,8 +52,8 @@ export default function ZuordnungForm({
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     setSaving(true);
     setError(null);
 
@@ -126,9 +127,7 @@ export default function ZuordnungForm({
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
+        <FormErrorBanner message={error} onRetry={() => void handleSubmit()} />
       )}
 
       <Button type="submit" variant="primary" disabled={saving}>

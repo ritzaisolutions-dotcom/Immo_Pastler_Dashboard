@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { mapDbError } from "@/lib/api-errors";
 import { TABLES } from "@/lib/supabase/tables";
 import { isPartnerGewerk, type PartnerGewerk } from "@/lib/types";
 
@@ -19,13 +20,13 @@ type PartnerBody = {
 
 function parsePartnerBody(body: PartnerBody) {
   if (typeof body.firma !== "string" || !body.firma.trim()) {
-    return { error: "firma required" as const };
+    return { error: "Firma ist erforderlich" as const };
   }
   if (typeof body.email !== "string" || !body.email.trim()) {
-    return { error: "email required" as const };
+    return { error: "E-Mail ist erforderlich" as const };
   }
   if (typeof body.gewerk !== "string" || !isPartnerGewerk(body.gewerk)) {
-    return { error: "invalid gewerk" as const };
+    return { error: "Ungültiges Gewerk" as const };
   }
 
   return {
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: "Insert failed" }, { status: 400 });
+    return NextResponse.json({ error: mapDbError(error) }, { status: 400 });
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

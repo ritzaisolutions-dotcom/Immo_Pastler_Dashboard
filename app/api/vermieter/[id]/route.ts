@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { API_ERRORS, mapDbError } from "@/lib/api-errors";
 import { parseVermieterBody } from "@/lib/parse-vermieter";
 import { TABLES } from "@/lib/supabase/tables";
 
@@ -24,11 +25,11 @@ export async function PATCH(
     .select("id");
 
   if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 400 });
+    return NextResponse.json({ error: mapDbError(error) }, { status: 400 });
   }
 
   if (!updated || updated.length === 0) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: API_ERRORS.notFound }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

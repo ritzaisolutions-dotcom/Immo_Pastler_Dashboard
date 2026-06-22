@@ -3,8 +3,10 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import FormErrorBanner from "@/components/FormErrorBanner";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import {
   PARTNER_GEWERKE,
@@ -35,8 +37,8 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
   const [notizen, setNotizen] = useState(partner?.notizen ?? "");
   const [aktiv, setAktiv] = useState(partner?.aktiv ?? true);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     setError(null);
     setLoading(true);
 
@@ -75,7 +77,11 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
     }
 
     toast.success(isEdit ? "Partner aktualisiert" : "Partner angelegt");
-    router.push("/partner");
+    if (isEdit) {
+      router.push(`/partner/${partner!.id}`);
+    } else {
+      router.push("/partner");
+    }
     router.refresh();
   }
 
@@ -142,25 +148,19 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
         ))}
       </Select>
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Beschreibung</label>
-        <textarea
-          rows={3}
-          value={beschreibung}
-          onChange={(e) => setBeschreibung(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Beschreibung"
+        rows={3}
+        value={beschreibung}
+        onChange={(e) => setBeschreibung(e.target.value)}
+      />
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
-        <textarea
-          rows={3}
-          value={notizen}
-          onChange={(e) => setNotizen(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Notizen (intern)"
+        rows={3}
+        value={notizen}
+        onChange={(e) => setNotizen(e.target.value)}
+      />
 
       {isEdit && (
         <label className="flex items-center gap-2 text-sm text-text-secondary">
@@ -174,9 +174,7 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
       )}
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
+        <FormErrorBanner message={error} onRetry={() => void handleSubmit()} />
       )}
 
       <div className="flex gap-3">
@@ -186,7 +184,9 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/partner")}
+          onClick={() =>
+            router.push(isEdit ? `/partner/${partner!.id}` : "/partner")
+          }
         >
           Abbrechen
         </Button>

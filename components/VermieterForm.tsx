@@ -2,7 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import FormErrorBanner from "@/components/FormErrorBanner";
 import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import { type Vermieter } from "@/lib/types";
 
@@ -26,8 +29,8 @@ export default function VermieterForm({ vermieter }: VermieterFormProps) {
   const [beschreibung, setBeschreibung] = useState(vermieter?.beschreibung ?? "");
   const [notizen, setNotizen] = useState(vermieter?.notizen ?? "");
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     setError(null);
     setLoading(true);
 
@@ -54,6 +57,7 @@ export default function VermieterForm({ vermieter }: VermieterFormProps) {
         const data = (await res.json()) as { error?: string };
         throw new Error(data.error ?? "Speichern fehlgeschlagen");
       }
+      toast.success(isEdit ? "Vermieter aktualisiert" : "Vermieter angelegt");
       if (isEdit) {
         router.push(`/vermieter/${vermieter!.id}`);
       } else {
@@ -94,30 +98,22 @@ export default function VermieterForm({ vermieter }: VermieterFormProps) {
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Beschreibung</label>
-        <textarea
-          rows={3}
-          value={beschreibung}
-          onChange={(e) => setBeschreibung(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Beschreibung"
+        rows={3}
+        value={beschreibung}
+        onChange={(e) => setBeschreibung(e.target.value)}
+      />
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
-        <textarea
-          rows={3}
-          value={notizen}
-          onChange={(e) => setNotizen(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Notizen (intern)"
+        rows={3}
+        value={notizen}
+        onChange={(e) => setNotizen(e.target.value)}
+      />
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
+        <FormErrorBanner message={error} onRetry={() => void handleSubmit()} />
       )}
 
       <div className="flex gap-3">

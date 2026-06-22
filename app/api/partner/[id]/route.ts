@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
+import { API_ERRORS, mapDbError } from "@/lib/api-errors";
 import { TABLES } from "@/lib/supabase/tables";
 import { isPartnerGewerk, type PartnerGewerk } from "@/lib/types";
 
@@ -31,7 +32,7 @@ export async function PATCH(
 
   if ("firma" in body) {
     if (typeof body.firma !== "string" || !body.firma.trim()) {
-      return NextResponse.json({ error: "firma cannot be empty" }, { status: 400 });
+      return NextResponse.json({ error: "Firma darf nicht leer sein" }, { status: 400 });
     }
     update.firma = body.firma.trim();
   }
@@ -50,7 +51,7 @@ export async function PATCH(
   }
   if ("email" in body) {
     if (typeof body.email !== "string" || !body.email.trim()) {
-      return NextResponse.json({ error: "email cannot be empty" }, { status: 400 });
+      return NextResponse.json({ error: "E-Mail darf nicht leer sein" }, { status: 400 });
     }
     update.email = body.email.trim();
   }
@@ -72,7 +73,7 @@ export async function PATCH(
   }
 
   if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return NextResponse.json({ error: API_ERRORS.noFieldsToUpdate }, { status: 400 });
   }
 
   const { data: updated, error } = await auth.supabase
@@ -82,11 +83,11 @@ export async function PATCH(
     .select("id");
 
   if (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 400 });
+    return NextResponse.json({ error: mapDbError(error) }, { status: 400 });
   }
 
   if (!updated || updated.length === 0) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: API_ERRORS.notFound }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

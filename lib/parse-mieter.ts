@@ -17,21 +17,25 @@ type MieterBody = {
 
 export function parseMieterBody(body: MieterBody) {
   if (typeof body.name !== "string" || !body.name.trim()) {
-    return { error: "name required" as const };
+    return { error: "Name ist erforderlich" as const };
+  }
+
+  if (
+    typeof body.inserat_id !== "string" ||
+    !body.inserat_id.trim()
+  ) {
+    return { error: "Bitte ein Inserat auswählen" as const };
   }
 
   let status: MieterStatus = "aktiv";
   if (typeof body.status === "string" && body.status.trim()) {
     if (!isMieterStatus(body.status)) {
-      return { error: "invalid status" as const };
+      return { error: "Ungültiger Status" as const };
     }
     status = body.status;
   }
 
-  let inserat_id: string | null = null;
-  if (typeof body.inserat_id === "string" && body.inserat_id.trim()) {
-    inserat_id = body.inserat_id.trim();
-  }
+  const inserat_id = body.inserat_id.trim();
 
   const trimOrNull = (v: unknown) =>
     typeof v === "string" ? v.trim() || null : null;

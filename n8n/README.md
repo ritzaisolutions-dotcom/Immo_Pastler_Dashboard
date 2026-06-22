@@ -139,7 +139,7 @@ RPC wird in Node 6 aufgerufen. Rückgabe: `{ mieter_id, inserat_id, vermieter_id
 |-------|-------------------|-------|-----------|
 | 1 | `absender_mieter` | `mieter.email = von_email` | hoch |
 | 2 | `absender_vermieter` | `vermieter.email = von_email` | hoch |
-| 3 | `inhalt_objekt` | Adresse/PLZ/Stadt im Betreff+Text | mittel |
+| 3 | `inhalt_objekt` | Adresse/PLZ im Betreff+Text (alle Inserate; Stadt nur beim passenden Vermieter) | mittel |
 | 4 | `inhalt_einheit` | `einheit_nr` im Text | mittel |
 | 5 | `inhalt_mieter_name` | Mietername im Text | niedrig |
 | 6 | `unbekannt` | Kein Treffer → Telegram-Hinweis „Manuelle Zuordnung“ | — |
@@ -212,6 +212,9 @@ const defaults = {
 todo = { ...defaults, ...todo };
 if (typeof todo.partner_noetig !== 'boolean') {
   todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;
+}
+if (todo.kategorie === 'extern' && todo.gewerk && !todo.partner_noetig) {
+  todo.partner_noetig = true;
 }
 const validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];
 if (todo.gewerk && !validGewerke.includes(todo.gewerk)) {

@@ -1,9 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import FormErrorBanner from "@/components/FormErrorBanner";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import {
   INSERAT_TYPEN,
@@ -24,6 +28,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const hasVermieter = vermieter.length > 0;
 
   const [adresse, setAdresse] = useState(inserat?.adresse ?? "");
   const [plz, setPlz] = useState(inserat?.plz ?? "");
@@ -45,12 +50,13 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
       body: formData,
     });
     if (!res.ok) {
-      throw new Error("Bild-Upload fehlgeschlagen");
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error ?? "Bild-Upload fehlgeschlagen");
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     if (!vermieterId) {
       setError("Bitte einen Vermieter auswählen");
       return;
@@ -70,6 +76,8 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
     };
 
     try {
+      let targetId: string;
+
       if (isEdit) {
         const res = await fetch(`/api/inserate/${inserat!.id}`, {
           method: "PATCH",
@@ -80,10 +88,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
           const data = (await res.json()) as { error?: string };
           throw new Error(data.error ?? "Speichern fehlgeschlagen");
         }
-        if (imageFile) {
-          await uploadImage(inserat!.id);
-        }
-        router.push(`/inserate/${inserat!.id}`);
+        targetId = inserat!.id;
       } else {
         const res = await fetch("/api/inserate", {
           method: "POST",
@@ -95,11 +100,24 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
           throw new Error(data.error ?? "Anlegen fehlgeschlagen");
         }
         const { id } = (await res.json()) as { id: string };
-        if (imageFile) {
-          await uploadImage(id);
-        }
-        router.push(`/inserate/${id}`);
+        targetId = id;
       }
+
+      if (imageFile) {
+        try {
+          await uploadImage(targetId);
+        } catch {
+          toast.warning(
+            "Inserat gespeichert, aber Bild-Upload fehlgeschlagen. Sie können das Bild auf der Bearbeiten-Seite erneut hochladen.",
+          );
+          router.push(`/inserate/${targetId}/bearbeiten`);
+          router.refresh();
+          return;
+        }
+      }
+
+      toast.success(isEdit ? "Inserat aktualisiert" : "Inserat angelegt");
+      router.push(`/inserate/${targetId}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
@@ -144,11 +162,21 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
         ))}
       </Select>
 
+      {!hasVermieter && (
+        <p className="rounded-[4px] border border-border bg-warm-white px-3 py-2 text-sm text-text-secondary">
+          Noch kein Vermieter angelegt.{" "}
+          <Link href="/vermieter/neu" className="text-navy hover:text-gold">
+            Zuerst Vermieter anlegen
+          </Link>
+        </p>
+      )}
+
       <Select
         label="Vermieter *"
         required
         value={vermieterId}
         onChange={(e) => setVermieterId(e.target.value)}
+        disabled={!hasVermieter}
       >
         <option value="">— Vermieter wählen —</option>
         {vermieter.map((v) => (
@@ -167,46 +195,40 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
         onChange={(e) => setEinheiten(e.target.value)}
       />
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Objektbeschreibung</label>
-        <textarea
-          rows={3}
-          value={beschreibung}
-          onChange={(e) => setBeschreibung(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Objektbeschreibung"
+        rows={3}
+        value={beschreibung}
+        onChange={(e) => setBeschreibung(e.target.value)}
+      />
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
-        <textarea
-          rows={3}
-          value={notizen}
-          onChange={(e) => setNotizen(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Notizen (intern)"
+        rows={3}
+        value={notizen}
+        onChange={(e) => setNotizen(e.target.value)}
+      />
 
       <div>
         <label className="mb-1 block text-xs text-text-hint">
           Profilbild (max. 2 MB, JPEG/PNG/WebP)
         </label>
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-          className="block w-full text-sm text-text-secondary"
-        />
+        <div className="rounded-[4px] border border-border bg-white p-2 focus-within:border-navy focus-within:ring-2 focus-within:ring-navy/10">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-text-secondary outline-none"
+          />
+        </div>
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
+        <FormErrorBanner message={error} onRetry={() => void handleSubmit()} />
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || !hasVermieter}>
           {loading ? "Speichern…" : isEdit ? "Aktualisieren" : "Anlegen"}
         </Button>
         <Button

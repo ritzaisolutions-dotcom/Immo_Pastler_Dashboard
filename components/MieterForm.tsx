@@ -1,9 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import FormErrorBanner from "@/components/FormErrorBanner";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import {
   MIETER_STATUSES,
@@ -28,6 +32,7 @@ export default function MieterForm({
   const isEdit = Boolean(mieter);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasInserate = inserate.length > 0;
 
   const [name, setName] = useState(mieter?.name ?? "");
   const [email, setEmail] = useState(mieter?.email ?? "");
@@ -44,8 +49,8 @@ export default function MieterForm({
   const [auszugDatum, setAuszugDatum] = useState(mieter?.auszug_datum ?? "");
   const [status, setStatus] = useState<MieterStatus>(mieter?.status ?? "aktiv");
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: FormEvent) {
+    e?.preventDefault();
     setError(null);
     setLoading(true);
 
@@ -57,7 +62,7 @@ export default function MieterForm({
       plz,
       stadt,
       einheit_nr: einheitNr,
-      inserat_id: inseratId || null,
+      inserat_id: inseratId,
       einzug_datum: einzugDatum || null,
       auszug_datum: auszugDatum || null,
       status,
@@ -84,6 +89,7 @@ export default function MieterForm({
       return;
     }
 
+    toast.success(isEdit ? "Mieter aktualisiert" : "Mieter angelegt");
     if (isEdit) {
       router.push(`/mieter/${mieter!.id}`);
     } else {
@@ -116,11 +122,21 @@ export default function MieterForm({
         />
       </div>
 
+      {!hasInserate && (
+        <p className="rounded-[4px] border border-border bg-warm-white px-3 py-2 text-sm text-text-secondary">
+          Noch kein Inserat angelegt.{" "}
+          <Link href="/inserate/neu" className="text-navy hover:text-gold">
+            Zuerst Inserat anlegen
+          </Link>
+        </p>
+      )}
+
       <Select
         label="Inserat *"
         required
         value={inseratId}
         onChange={(e) => setInseratId(e.target.value)}
+        disabled={!hasInserate}
       >
         <option value="">— Inserat wählen —</option>
         {inserate.map((i) => (
@@ -152,15 +168,12 @@ export default function MieterForm({
         </div>
       </div>
 
-      <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
-        <textarea
-          rows={3}
-          value={notizen}
-          onChange={(e) => setNotizen(e.target.value)}
-          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
-        />
-      </div>
+      <Textarea
+        label="Notizen (intern)"
+        rows={3}
+        value={notizen}
+        onChange={(e) => setNotizen(e.target.value)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
@@ -190,13 +203,11 @@ export default function MieterForm({
       </Select>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
+        <FormErrorBanner message={error} onRetry={() => void handleSubmit()} />
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading || !hasInserate}>
           {loading ? "Speichern…" : isEdit ? "Aktualisieren" : "Anlegen"}
         </Button>
         <Button

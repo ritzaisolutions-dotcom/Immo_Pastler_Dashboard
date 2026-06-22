@@ -15,13 +15,13 @@ type InseratBody = {
 
 export function parseInseratBody(body: InseratBody) {
   if (typeof body.adresse !== "string" || !body.adresse.trim()) {
-    return { error: "adresse required" as const };
+    return { error: "Adresse ist erforderlich" as const };
   }
 
   let typ: InseratTyp | null = null;
   if (typeof body.typ === "string" && body.typ.trim()) {
     if (!isInseratTyp(body.typ)) {
-      return { error: "invalid typ" as const };
+      return { error: "Ungültiger Inserat-Typ" as const };
     }
     typ = body.typ;
   }
@@ -30,7 +30,7 @@ export function parseInseratBody(body: InseratBody) {
   if (body.einheiten !== undefined && body.einheiten !== null && body.einheiten !== "") {
     const n = Number(body.einheiten);
     if (!Number.isFinite(n) || n < 1) {
-      return { error: "invalid einheiten" as const };
+      return { error: "Einheiten müssen mindestens 1 sein" as const };
     }
     einheiten = Math.floor(n);
   }
