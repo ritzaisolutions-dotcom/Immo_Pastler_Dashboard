@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import PastlerLogo from "@/components/PastlerLogo";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import { Card, CardBody } from "@/components/ui/Card";
 import { createClient } from "@/utils/supabase/client";
 
 type Mode = "login" | "reset";
@@ -67,13 +66,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-full flex-1 items-center justify-center bg-login-hero px-4">
+    <div className="relative flex min-h-full flex-1 items-center justify-center bg-login-hero px-4 py-10">
       <div className="pointer-events-none absolute inset-0 bg-login-pattern" />
-      <Card className="relative z-10 w-full max-w-md border-white/10 bg-navy shadow-card">
-        <CardBody className="p-8">
+
+      <div className="relative z-10 w-full max-w-md rounded-[4px] border border-white/15 bg-white shadow-[0_24px_48px_rgba(13,24,40,0.35)]">
+        <div className="p-8">
           <div className="mb-8 text-center">
-            <PastlerLogo variant="dark" showWordmark className="mx-auto" />
-            <p className="mt-4 text-sm text-white/85">Internes Dashboard</p>
+            <PastlerLogo variant="light" showWordmark className="mx-auto" />
+            <p className="mt-4 text-sm font-medium text-text-secondary">
+              Internes Dashboard
+            </p>
           </div>
 
           {mode === "login" ? (
@@ -82,11 +84,11 @@ export default function LoginPage() {
                 label="E-Mail"
                 id="email"
                 type="email"
-                variant="dark"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                placeholder="name@beispiel.de"
               />
 
               <div>
@@ -94,11 +96,11 @@ export default function LoginPage() {
                   label="Passwort"
                   id="password"
                   type="password"
-                  variant="dark"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
@@ -106,59 +108,68 @@ export default function LoginPage() {
                     setError(null);
                     setMode("reset");
                   }}
-                  className="mt-1.5 text-xs text-white/70 transition-colors hover:text-white"
+                  className="mt-2 text-xs font-medium text-navy underline-offset-2 transition-colors hover:text-gold hover:underline"
                 >
                   Passwort vergessen?
                 </button>
               </div>
 
               {error && (
-                <p className="text-sm text-red-300" role="alert">
+                <p
+                  className="rounded-[4px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                  role="alert"
+                >
                   {error}
                 </p>
               )}
 
               <Button
                 type="submit"
-                variant="gold"
+                variant="primary"
                 disabled={loading}
-                className="w-full py-2.5"
+                className="w-full py-2.5 font-medium"
               >
                 {loading ? "Anmelden…" : "Anmelden"}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleReset} className="space-y-4">
-              <p className="text-sm text-white/85">
+              <p className="text-sm text-text-secondary">
                 Gib deine E-Mail-Adresse ein, um einen Reset-Link anzufordern.
               </p>
               <Input
                 label="E-Mail"
                 id="reset-email"
                 type="email"
-                variant="dark"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                placeholder="name@beispiel.de"
               />
 
               {error && (
-                <p className="text-sm text-red-300" role="alert">
+                <p
+                  className="rounded-[4px] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                  role="alert"
+                >
                   {error}
                 </p>
               )}
               {info && (
-                <p className="text-sm text-green-300" role="status">
+                <p
+                  className="rounded-[4px] border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800"
+                  role="status"
+                >
                   {info}
                 </p>
               )}
 
               <Button
                 type="submit"
-                variant="gold"
+                variant="primary"
                 disabled={loading || Boolean(info)}
-                className="w-full py-2.5"
+                className="w-full py-2.5 font-medium"
               >
                 {loading ? "Senden…" : "Reset-Link senden"}
               </Button>
@@ -170,14 +181,14 @@ export default function LoginPage() {
                   setInfo(null);
                   setMode("login");
                 }}
-                className="w-full text-center text-xs text-white/70 transition-colors hover:text-white"
+                className="w-full text-center text-xs font-medium text-navy underline-offset-2 transition-colors hover:text-gold hover:underline"
               >
                 Zurück zur Anmeldung
               </button>
             </form>
           )}
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

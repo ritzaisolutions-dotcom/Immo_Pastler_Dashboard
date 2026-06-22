@@ -12,7 +12,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   secondary:
     "border border-border bg-white text-text-primary hover:bg-warm-white disabled:opacity-60",
   gold:
-    "bg-gold text-burgundy font-medium hover:bg-gold-light disabled:opacity-60",
+    "bg-gold text-navy font-semibold hover:bg-gold-light disabled:opacity-60",
   ghost:
     "border border-white/20 bg-transparent text-white/70 hover:border-white/40 hover:text-white",
 };
