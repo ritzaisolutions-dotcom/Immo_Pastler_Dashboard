@@ -2,7 +2,7 @@
 
 **Verantwortlicher:** Immobilienverwaltung Pastler UG (haftungsbeschränkt)  
 **Kontakt:** hausverwaltung@pastler.com · 0261 1349 4710  
-**Stand:** 2026-06-20  
+**Stand:** 2026-06-22  
 **Hinweis:** Arbeitsgrundlage gemäß Art. 30 DSGVO — keine Rechtsberatung
 
 ---
@@ -76,6 +76,23 @@
 
 ---
 
+## VV-5: Öffentliche Website — Kontaktformular
+
+| Feld | Inhalt |
+|------|--------|
+| **Zweck** | Kontaktanfragen von Website-Besuchern (Eigentümer-Interessenten) entgegennehmen |
+| **Rechtsgrundlage** | Art. 6(1)(a) DSGVO (Einwilligung via Checkbox); Art. 6(1)(b) bei bestehendem Vertragsverhältnis |
+| **Kategorien betroffener Personen** | Website-Besucher, potenzielle Auftraggeber |
+| **Datenkategorien** | Name, E-Mail, Anliegen-Kategorie, Nachrichtentext, Zeitstempel |
+| **Empfänger** | n8n (Weiterleitung), E-Mail-Postfach `hausverwaltung@pastler.com` — **keine** Speicherung in Supabase durch RAIS |
+| **Speicherdauer** | E-Mail-Postfach des Verantwortlichen gemäß internen Aufbewahrungsrichtlinien |
+| **TOMs** | HTTPS, Webhook-Auth (Bearer Secret), Rate-Limiting auf `/api/contact` |
+| **Technik** | Next.js `02_websites`, n8n Workflow `pastler-kontakt`, siehe [`02_websites/DEPLOYMENT.md`](../../02_websites/DEPLOYMENT.md) |
+
+**Hinweis:** VV-5 betrifft nur das Kontaktformular auf [pastler.com](https://pastler.com). Das interne Dashboard (VV-1–4) ist nicht öffentlich zugänglich.
+
+---
+
 ## Auftragsverarbeiter
 
 Siehe [`docs/AV_VERTRAEGE.md`](./AV_VERTRAEGE.md).
@@ -90,4 +107,4 @@ Gemeinsame Supabase-Instanz `htyeflqymmbcjhvknjoe`. Pastler nutzt ausschließlic
 
 ## Abgrenzung pastler.com
 
-Die öffentliche Website [pastler.com](https://pastler.com/datenschutzhinweise/) hat eigene Verarbeitungszwecke (Marketing, Kontaktformular). Das interne Dashboard ist nicht öffentlich zugänglich.
+Die öffentliche Website [pastler.com](https://pastler.com) hat eigene Verarbeitungszwecke (Marketing, Kontaktformular — siehe **VV-5**). Das interne Dashboard ist nicht öffentlich zugänglich. Datenschutzerklärung der Website: `/datenschutz` auf pastler.com.

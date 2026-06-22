@@ -30,6 +30,8 @@ Use the same staff login as the Haller dashboard.
 
 Siehe auch [`docs/AUDIT_ARBEITSPLAN.md`](./docs/AUDIT_ARBEITSPLAN.md) für den schrittweisen Security- und DSGVO-Arbeitsplan.
 
+**Go-Live (Demo → Kundenproduktion):** [`docs/GO_LIVE_CHECKLISTE.md`](./docs/GO_LIVE_CHECKLISTE.md) — Datenbank, n8n, SMTP, Domain, Stammdaten, Abnahme in einem Dokument.
+
 ```bash
 git grep -i "eyJ\|service_role\|sk_live" -- "*.ts" "*.tsx" "*.js" "*.json"
 grep -rn "console.log" app/
