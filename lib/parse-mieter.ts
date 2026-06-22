@@ -4,11 +4,15 @@ type MieterBody = {
   name?: unknown;
   email?: unknown;
   telefon?: unknown;
+  adresse?: unknown;
+  plz?: unknown;
+  stadt?: unknown;
   einheit_nr?: unknown;
   inserat_id?: unknown;
   einzug_datum?: unknown;
   auszug_datum?: unknown;
   status?: unknown;
+  notizen?: unknown;
 };
 
 export function parseMieterBody(body: MieterBody) {
@@ -29,21 +33,26 @@ export function parseMieterBody(body: MieterBody) {
     inserat_id = body.inserat_id.trim();
   }
 
+  const trimOrNull = (v: unknown) =>
+    typeof v === "string" ? v.trim() || null : null;
+
   const dateOrNull = (v: unknown) =>
     typeof v === "string" && v.trim() ? v.trim() : null;
 
   return {
     data: {
       name: body.name.trim(),
-      email: typeof body.email === "string" ? body.email.trim() || null : null,
-      telefon:
-        typeof body.telefon === "string" ? body.telefon.trim() || null : null,
-      einheit_nr:
-        typeof body.einheit_nr === "string" ? body.einheit_nr.trim() || null : null,
+      email: trimOrNull(body.email),
+      telefon: trimOrNull(body.telefon),
+      adresse: trimOrNull(body.adresse),
+      plz: trimOrNull(body.plz),
+      stadt: trimOrNull(body.stadt),
+      einheit_nr: trimOrNull(body.einheit_nr),
       inserat_id,
       einzug_datum: dateOrNull(body.einzug_datum),
       auszug_datum: dateOrNull(body.auszug_datum),
       status,
+      notizen: trimOrNull(body.notizen),
     },
   };
 }

@@ -5,9 +5,11 @@ type InseratBody = {
   plz?: unknown;
   stadt?: unknown;
   typ?: unknown;
+  vermieter_id?: unknown;
   eigentuemer_name?: unknown;
   eigentuemer_email?: unknown;
   einheiten?: unknown;
+  beschreibung?: unknown;
   notizen?: unknown;
 };
 
@@ -33,12 +35,18 @@ export function parseInseratBody(body: InseratBody) {
     einheiten = Math.floor(n);
   }
 
+  let vermieter_id: string | null = null;
+  if (typeof body.vermieter_id === "string" && body.vermieter_id.trim()) {
+    vermieter_id = body.vermieter_id.trim();
+  }
+
   return {
     data: {
       adresse: body.adresse.trim(),
       plz: typeof body.plz === "string" ? body.plz.trim() || null : null,
       stadt: typeof body.stadt === "string" ? body.stadt.trim() || null : null,
       typ,
+      vermieter_id,
       eigentuemer_name:
         typeof body.eigentuemer_name === "string"
           ? body.eigentuemer_name.trim() || null
@@ -48,6 +56,10 @@ export function parseInseratBody(body: InseratBody) {
           ? body.eigentuemer_email.trim() || null
           : null,
       einheiten,
+      beschreibung:
+        typeof body.beschreibung === "string"
+          ? body.beschreibung.trim() || null
+          : null,
       notizen:
         typeof body.notizen === "string" ? body.notizen.trim() || null : null,
     },

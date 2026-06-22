@@ -33,7 +33,9 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
 
   const { data: mieterData } = await supabase
     .from(TABLES.mieter)
-    .select(`*, inserat:${TABLES.inserate}(id, adresse, stadt, bild_url)`)
+    .select(
+      `*, inserat:${TABLES.inserate}(id, adresse, stadt, bild_url, vermieter:${TABLES.vermieter}(id, name, firma))`,
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -42,7 +44,11 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
   }
 
   const mieter = mieterData as MieterWithInserat & {
-    inserat: Pick<Inserat, "id" | "adresse" | "stadt" | "bild_url"> | null;
+    inserat:
+      | (Pick<Inserat, "id" | "adresse" | "stadt" | "bild_url"> & {
+          vermieter: { id: string; name: string; firma: string | null } | null;
+        })
+      | null;
   };
 
   let todos = (await supabase
@@ -125,7 +131,7 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
               <dd className="text-text-primary">{formatDate(mieter.auszug_datum)}</dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-text-hint">Inserat</dt>
+              <dt className="text-text-hint">Inserat (Objekt)</dt>
               <dd>
                 {mieter.inserat ? (
                   <Link
@@ -140,6 +146,38 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
                 )}
               </dd>
             </div>
+            {mieter.inserat?.vermieter && (
+              <div className="sm:col-span-2">
+                <dt className="text-text-hint">Vermieter</dt>
+                <dd>
+                  <Link
+                    href={`/vermieter/${mieter.inserat.vermieter.id}`}
+                    className="text-navy hover:text-gold"
+                  >
+                    {mieter.inserat.vermieter.name}
+                    {mieter.inserat.vermieter.firma
+                      ? ` (${mieter.inserat.vermieter.firma})`
+                      : ""}
+                  </Link>
+                </dd>
+              </div>
+            )}
+            {(mieter.adresse || mieter.plz || mieter.stadt) && (
+              <div className="sm:col-span-2">
+                <dt className="text-text-hint">Korrespondenzadresse</dt>
+                <dd className="text-text-primary">
+                  {[mieter.adresse, [mieter.plz, mieter.stadt].filter(Boolean).join(" ")]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                </dd>
+              </div>
+            )}
+            {mieter.notizen && (
+              <div className="sm:col-span-2">
+                <dt className="text-text-hint">Notizen</dt>
+                <dd className="whitespace-pre-wrap text-text-primary">{mieter.notizen}</dd>
+              </div>
+            )}
           </dl>
         </CardBody>
       </Card>

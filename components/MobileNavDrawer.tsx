@@ -11,6 +11,7 @@ import {
   Mail,
   Menu,
   Shield,
+  UserCircle,
   Users,
   X,
   type LucideIcon,
@@ -26,6 +27,7 @@ const baseNavItems: { href: string; label: string; icon: LucideIcon }[] = [
 ];
 
 const mitarbeiterNavItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/vermieter", label: "Vermieter", icon: UserCircle },
   { href: "/partner", label: "Partner", icon: Handshake },
   { href: "/emails", label: "E-Mails", icon: Mail },
 ];

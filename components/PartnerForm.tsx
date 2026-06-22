@@ -31,6 +31,7 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
   const [email, setEmail] = useState(partner?.email ?? "");
   const [telefon, setTelefon] = useState(partner?.telefon ?? "");
   const [gewerk, setGewerk] = useState<PartnerGewerk>(partner?.gewerk ?? "allgemein");
+  const [beschreibung, setBeschreibung] = useState(partner?.beschreibung ?? "");
   const [notizen, setNotizen] = useState(partner?.notizen ?? "");
   const [aktiv, setAktiv] = useState(partner?.aktiv ?? true);
 
@@ -48,6 +49,7 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
       email,
       telefon,
       gewerk,
+      beschreibung,
       notizen,
       aktiv,
     };
@@ -141,7 +143,17 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
       </Select>
 
       <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen</label>
+        <label className="mb-1 block text-xs text-text-hint">Beschreibung</label>
+        <textarea
+          rows={3}
+          value={beschreibung}
+          onChange={(e) => setBeschreibung(e.target.value)}
+          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
         <textarea
           rows={3}
           value={notizen}

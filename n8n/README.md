@@ -92,6 +92,7 @@ Todo-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 |--------------------|--------------|
 | `emails` | `pastler_emails` |
 | `mieter` | `pastler_mieter` |
+| `eigentuemer` / Vermieter | `pastler_eigentuemer` |
 | `todos` | `pastler_todos` |
 | `partner` | `pastler_partner` |
 | `partner_nachrichten` | `pastler_partner_nachrichten` |
@@ -107,11 +108,11 @@ Todo-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 | 3 | IF New Email | `$json.id` leer → neu; sonst Stop Duplicate |
 | 4 | Raw Email | Insert `pastler_emails`; `continueOnFail: true` |
 | 5 | IF Email Saved | `$json.id` gesetzt → weiter; sonst Stop (Race/Duplikat) |
-| 6 | Supabase getAll | `pastler_mieter` WHERE `email = von_email` |
+| 6 | HTTP Request | RPC `pastler_resolve_zuordnung` (Credential: Supabase Service Role Header) |
 | 7 | LLM Chain | Mistral — Todo + Use-Case + Gewerk (`continueOnFail: true`) |
-| 8 | Code Node | JSON parse + `llm_fallback`, `use_case`, `gewerk`, `partner_noetig` |
-| 9 | Supabase insert | `pastler_todos` |
-| 10 | Supabase update | `pastler_emails.verarbeitet = true` |
+| 8 | Code Node | JSON parse + Zuordnung aus Node 6, `llm_fallback`, `gewerk`, `partner_noetig` |
+| 9 | Supabase insert | `pastler_todos` inkl. `vermieter_id`, `zuordnung_*` |
+| 10 | Supabase update | `pastler_emails`: `verarbeitet`, Zuordnungsfelder |
 | 11 | IF Alert | `prioritaet = hoch` OR `llm_fallback` |
 | 12 | Telegram | Nur Metadaten an deine Chat-ID (DSGVO) |
 | 13 | IF | `partner_noetig === true` && `gewerk` gesetzt |
@@ -133,6 +134,13 @@ Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.
 Von: {{ $('Raw Email').item.json.von_email }}
 Betreff: {{ $('Raw Email').item.json.betreff }}
 Inhalt: {{ $('Raw Email').item.json.inhalt_text }}
+
+Bereits ermittelte Zuordnung (regelbasiert):
+- mieter_id: {{ $('Resolve Zuordnung').item.json.mieter_id }}
+- inserat_id: {{ $('Resolve Zuordnung').item.json.inserat_id }}
+- vermieter_id: {{ $('Resolve Zuordnung').item.json.vermieter_id }}
+- quelle: {{ $('Resolve Zuordnung').item.json.quelle }}
+- konfidenz: {{ $('Resolve Zuordnung').item.json.konfidenz }}
 
 Antworte NUR mit validem JSON, kein Markdown, keine Erklärung:
 {
@@ -189,15 +197,18 @@ const validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'haus
 if (todo.gewerk && !validGewerke.includes(todo.gewerk)) {
   todo.gewerk = null;
 }
-const mieter = $('Mieter-Lookup').all()?.[0]?.json ?? null;
+const zuordnung = $('Resolve Zuordnung').first().json ?? {};
 const email = $('Raw Email').item.json;
 return [{
   json: {
     ...todo,
     llm_fallback,
     email_id: email.id,
-    mieter_id: mieter?.id ?? null,
-    inserat_id: mieter?.inserat_id ?? null,
+    mieter_id: zuordnung.mieter_id ?? null,
+    inserat_id: zuordnung.inserat_id ?? null,
+    vermieter_id: zuordnung.vermieter_id ?? null,
+    zuordnung_quelle: zuordnung.quelle ?? 'unbekannt',
+    zuordnung_konfidenz: zuordnung.konfidenz ?? 'niedrig',
   },
 }];
 ```

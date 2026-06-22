@@ -10,13 +10,15 @@ import {
   inseratTypLabel,
   type Inserat,
   type InseratTyp,
+  type Vermieter,
 } from "@/lib/types";
 
 interface InseratFormProps {
   inserat?: Inserat;
+  vermieter: Pick<Vermieter, "id" | "name" | "firma">[];
 }
 
-export default function InseratForm({ inserat }: InseratFormProps) {
+export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
   const router = useRouter();
   const isEdit = Boolean(inserat);
   const [loading, setLoading] = useState(false);
@@ -27,15 +29,11 @@ export default function InseratForm({ inserat }: InseratFormProps) {
   const [plz, setPlz] = useState(inserat?.plz ?? "");
   const [stadt, setStadt] = useState(inserat?.stadt ?? "");
   const [typ, setTyp] = useState<InseratTyp | "">(inserat?.typ ?? "");
-  const [eigentuemerName, setEigentuemerName] = useState(
-    inserat?.eigentuemer_name ?? "",
-  );
-  const [eigentuemerEmail, setEigentuemerEmail] = useState(
-    inserat?.eigentuemer_email ?? "",
-  );
+  const [vermieterId, setVermieterId] = useState(inserat?.vermieter_id ?? "");
   const [einheiten, setEinheiten] = useState(
     inserat?.einheiten != null ? String(inserat.einheiten) : "1",
   );
+  const [beschreibung, setBeschreibung] = useState(inserat?.beschreibung ?? "");
   const [notizen, setNotizen] = useState(inserat?.notizen ?? "");
 
   async function uploadImage(inseratId: string) {
@@ -53,6 +51,10 @@ export default function InseratForm({ inserat }: InseratFormProps) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!vermieterId) {
+      setError("Bitte einen Vermieter auswählen");
+      return;
+    }
     setError(null);
     setLoading(true);
 
@@ -61,9 +63,9 @@ export default function InseratForm({ inserat }: InseratFormProps) {
       plz,
       stadt,
       typ: typ || null,
-      eigentuemer_name: eigentuemerName,
-      eigentuemer_email: eigentuemerEmail,
+      vermieter_id: vermieterId || null,
       einheiten,
+      beschreibung,
       notizen,
     };
 
@@ -142,19 +144,20 @@ export default function InseratForm({ inserat }: InseratFormProps) {
         ))}
       </Select>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input
-          label="Eigentümer Name"
-          value={eigentuemerName}
-          onChange={(e) => setEigentuemerName(e.target.value)}
-        />
-        <Input
-          label="Eigentümer E-Mail"
-          type="email"
-          value={eigentuemerEmail}
-          onChange={(e) => setEigentuemerEmail(e.target.value)}
-        />
-      </div>
+      <Select
+        label="Vermieter *"
+        required
+        value={vermieterId}
+        onChange={(e) => setVermieterId(e.target.value)}
+      >
+        <option value="">— Vermieter wählen —</option>
+        {vermieter.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.name}
+            {v.firma ? ` (${v.firma})` : ""}
+          </option>
+        ))}
+      </Select>
 
       <Input
         label="Einheiten"
@@ -165,7 +168,17 @@ export default function InseratForm({ inserat }: InseratFormProps) {
       />
 
       <div>
-        <label className="mb-1 block text-xs text-text-hint">Notizen</label>
+        <label className="mb-1 block text-xs text-text-hint">Objektbeschreibung</label>
+        <textarea
+          rows={3}
+          value={beschreibung}
+          onChange={(e) => setBeschreibung(e.target.value)}
+          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
         <textarea
           rows={3}
           value={notizen}

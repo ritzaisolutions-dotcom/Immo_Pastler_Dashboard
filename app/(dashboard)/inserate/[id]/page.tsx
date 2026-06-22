@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/DataTable";
 import {
   inseratTypLabel,
-  type Inserat,
+  type InseratWithVermieter,
   type Mieter,
   type Todo,
   type TodoWithNachricht,
@@ -41,7 +41,7 @@ export default async function InseratDetailPage({
 
   const { data: inseratData } = await supabase
     .from(TABLES.inserate)
-    .select("*")
+    .select(`*, vermieter:${TABLES.vermieter}(id, name, firma, email, telefon)`)
     .eq("id", id)
     .maybeSingle();
 
@@ -49,7 +49,7 @@ export default async function InseratDetailPage({
     notFound();
   }
 
-  const inserat = inseratData as Inserat;
+  const inserat = inseratData as InseratWithVermieter;
 
   const [{ data: mieterList }, { data: todosList }] = await Promise.all([
     supabase
@@ -135,16 +135,34 @@ export default async function InseratDetailPage({
               <dd className="text-text-primary">{inserat.einheiten ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-text-hint">Eigentümer</dt>
+              <dt className="text-text-hint">Vermieter</dt>
               <dd className="text-text-primary">
-                {inserat.eigentuemer_name ?? "—"}
-                {inserat.eigentuemer_email && (
+                {inserat.vermieter ? (
+                  <Link
+                    href={`/vermieter/${inserat.vermieter.id}`}
+                    className="text-navy hover:text-gold"
+                  >
+                    {inserat.vermieter.name}
+                    {inserat.vermieter.firma ? ` (${inserat.vermieter.firma})` : ""}
+                  </Link>
+                ) : (
+                  inserat.eigentuemer_name ?? "—"
+                )}
+                {(inserat.vermieter?.email ?? inserat.eigentuemer_email) && (
                   <span className="block text-text-secondary">
-                    {inserat.eigentuemer_email}
+                    {inserat.vermieter?.email ?? inserat.eigentuemer_email}
                   </span>
                 )}
               </dd>
             </div>
+            {inserat.beschreibung && (
+              <div className="sm:col-span-2">
+                <dt className="text-text-hint">Objektbeschreibung</dt>
+                <dd className="whitespace-pre-wrap text-text-primary">
+                  {inserat.beschreibung}
+                </dd>
+              </div>
+            )}
             {inserat.notizen && (
               <div className="sm:col-span-2">
                 <dt className="text-text-hint">Notizen</dt>

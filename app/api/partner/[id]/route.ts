@@ -12,6 +12,7 @@ type PartnerBody = {
   email?: unknown;
   telefon?: unknown;
   gewerk?: unknown;
+  beschreibung?: unknown;
   notizen?: unknown;
   aktiv?: unknown;
 };
@@ -58,6 +59,10 @@ export async function PATCH(
   }
   if (typeof body.gewerk === "string" && isPartnerGewerk(body.gewerk)) {
     update.gewerk = body.gewerk as PartnerGewerk;
+  }
+  if (body.beschreibung !== undefined) {
+    update.beschreibung =
+      typeof body.beschreibung === "string" ? body.beschreibung.trim() || null : null;
   }
   if (body.notizen !== undefined) {
     update.notizen = typeof body.notizen === "string" ? body.notizen.trim() || null : null;

@@ -33,6 +33,10 @@ export default function MieterForm({
   const [email, setEmail] = useState(mieter?.email ?? "");
   const [telefon, setTelefon] = useState(mieter?.telefon ?? "");
   const [einheitNr, setEinheitNr] = useState(mieter?.einheit_nr ?? "");
+  const [adresse, setAdresse] = useState(mieter?.adresse ?? "");
+  const [plz, setPlz] = useState(mieter?.plz ?? "");
+  const [stadt, setStadt] = useState(mieter?.stadt ?? "");
+  const [notizen, setNotizen] = useState(mieter?.notizen ?? "");
   const [inseratId, setInseratId] = useState(
     mieter?.inserat_id ?? defaultInseratId ?? "",
   );
@@ -49,11 +53,15 @@ export default function MieterForm({
       name,
       email,
       telefon,
+      adresse,
+      plz,
+      stadt,
       einheit_nr: einheitNr,
       inserat_id: inseratId || null,
       einzug_datum: einzugDatum || null,
       auszug_datum: auszugDatum || null,
       status,
+      notizen,
     };
 
     const url = isEdit ? `/api/mieter/${mieter!.id}` : "/api/mieter";
@@ -109,11 +117,12 @@ export default function MieterForm({
       </div>
 
       <Select
-        label="Inserat"
+        label="Inserat *"
+        required
         value={inseratId}
         onChange={(e) => setInseratId(e.target.value)}
       >
-        <option value="">— Kein Inserat —</option>
+        <option value="">— Inserat wählen —</option>
         {inserate.map((i) => (
           <option key={i.id} value={i.id}>
             {i.adresse}
@@ -127,6 +136,31 @@ export default function MieterForm({
         value={einheitNr}
         onChange={(e) => setEinheitNr(e.target.value)}
       />
+
+      <p className="text-xs text-text-hint">
+        Korrespondenzadresse (optional — leer = Objektadresse des Inserats)
+      </p>
+      <Input
+        label="Adresse"
+        value={adresse}
+        onChange={(e) => setAdresse(e.target.value)}
+      />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Input label="PLZ" value={plz} onChange={(e) => setPlz(e.target.value)} />
+        <div className="sm:col-span-2">
+          <Input label="Stadt" value={stadt} onChange={(e) => setStadt(e.target.value)} />
+        </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs text-text-hint">Notizen (intern)</label>
+        <textarea
+          rows={3}
+          value={notizen}
+          onChange={(e) => setNotizen(e.target.value)}
+          className="w-full rounded-[4px] border border-border bg-white px-3 py-2 text-sm outline-none focus:border-navy"
+        />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input

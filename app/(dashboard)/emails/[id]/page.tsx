@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
 import { TABLES } from "@/lib/supabase/tables";
+import {
+  zuordnungKonfidenzLabel,
+  zuordnungQuelleLabel,
+} from "@/lib/zuordnung";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { type Email } from "@/lib/types";
@@ -38,6 +42,28 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
   } else if (todo?.inserat_id) {
     todoHref = `/todos?inserat_id=${todo.inserat_id}`;
   }
+
+  const [mieterRes, inseratRes, vermieterRes] = await Promise.all([
+    email.mieter_id
+      ? supabase.from(TABLES.mieter).select("id, name").eq("id", email.mieter_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    email.inserat_id
+      ? supabase.from(TABLES.inserate).select("id, adresse, stadt").eq("id", email.inserat_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    email.vermieter_id
+      ? supabase.from(TABLES.vermieter).select("id, name, firma").eq("id", email.vermieter_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const mieter = mieterRes.data;
+  const inserat = inseratRes.data;
+  const vermieter = vermieterRes.data;
+
+  const hasZuordnung =
+    email.mieter_id ||
+    email.inserat_id ||
+    email.vermieter_id ||
+    (email.zuordnung_quelle && email.zuordnung_quelle !== "unbekannt");
 
   return (
     <div>
@@ -92,6 +118,71 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
           </dl>
         </CardBody>
       </Card>
+
+      {hasZuordnung && (
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="font-medium text-text-primary">Zuordnung</h2>
+          </CardHeader>
+          <CardBody>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-text-hint">Quelle</dt>
+                <dd className="text-text-primary">
+                  {zuordnungQuelleLabel(email.zuordnung_quelle)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-text-hint">Konfidenz</dt>
+                <dd className="text-text-primary">
+                  {zuordnungKonfidenzLabel(email.zuordnung_konfidenz)}
+                </dd>
+              </div>
+              {mieter && (
+                <div>
+                  <dt className="text-text-hint">Mieter</dt>
+                  <dd>
+                    <Link
+                      href={`/mieter/${mieter.id}`}
+                      className="text-navy hover:text-gold"
+                    >
+                      {mieter.name}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+              {inserat && (
+                <div>
+                  <dt className="text-text-hint">Inserat</dt>
+                  <dd>
+                    <Link
+                      href={`/inserate/${inserat.id}`}
+                      className="text-navy hover:text-gold"
+                    >
+                      {inserat.adresse}
+                      {inserat.stadt ? `, ${inserat.stadt}` : ""}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+              {vermieter && (
+                <div>
+                  <dt className="text-text-hint">Vermieter</dt>
+                  <dd>
+                    <Link
+                      href={`/vermieter/${vermieter.id}`}
+                      className="text-navy hover:text-gold"
+                    >
+                      {vermieter.name}
+                      {vermieter.firma ? ` (${vermieter.firma})` : ""}
+                    </Link>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -5,4 +5,5 @@ export const TABLES = {
   emails: "pastler_emails",
   partner: "pastler_partner",
   partnerNachrichten: "pastler_partner_nachrichten",
+  vermieter: "pastler_eigentuemer",
 } as const;

@@ -18,6 +18,7 @@ const protectedPaths = [
   "/todos",
   "/mieter",
   "/inserate",
+  "/vermieter",
   "/datenschutz",
   "/partner",
   "/emails",
@@ -71,7 +72,9 @@ export async function proxy(request: NextRequest) {
 
   const isMitarbeiterOnlyRoute =
     pathname.startsWith("/partner") ||
+    pathname.startsWith("/vermieter") ||
     pathname.startsWith("/api/partner") ||
+    pathname.startsWith("/api/vermieter") ||
     pathname.startsWith("/api/partner-nachrichten") ||
     pathname.startsWith("/emails") ||
     pathname.startsWith("/inserate/neu") ||
@@ -144,11 +147,15 @@ export const config = {
     "/datenschutz",
     "/partner",
     "/partner/:path*",
+    "/vermieter",
+    "/vermieter/:path*",
     "/emails",
     "/emails/:path*",
     "/api/todos/:path*",
     "/api/partner",
     "/api/partner/:path*",
+    "/api/vermieter",
+    "/api/vermieter/:path*",
     "/api/partner-nachrichten/:path*",
     "/api/inserate",
     "/api/inserate/:path*",

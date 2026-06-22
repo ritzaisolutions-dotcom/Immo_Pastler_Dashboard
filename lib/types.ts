@@ -16,11 +16,27 @@ export interface Inserat {
   plz: string | null;
   stadt: string | null;
   typ: InseratTyp | null;
+  vermieter_id: string | null;
   eigentuemer_name: string | null;
   eigentuemer_email: string | null;
   einheiten: number | null;
+  beschreibung: string | null;
   notizen: string | null;
   bild_url: string | null;
+  created_at: string;
+}
+
+export interface Vermieter {
+  id: string;
+  name: string;
+  firma: string | null;
+  email: string;
+  telefon: string | null;
+  adresse: string | null;
+  plz: string | null;
+  stadt: string | null;
+  beschreibung: string | null;
+  notizen: string | null;
   created_at: string;
 }
 
@@ -33,6 +49,11 @@ export interface Email {
   inhalt_text: string | null;
   empfangen_at: string;
   verarbeitet: boolean;
+  mieter_id: string | null;
+  inserat_id: string | null;
+  vermieter_id: string | null;
+  zuordnung_quelle: string | null;
+  zuordnung_konfidenz: string | null;
   created_at: string;
 }
 
@@ -46,10 +67,14 @@ export interface Mieter {
   name: string;
   email: string | null;
   telefon: string | null;
+  adresse: string | null;
+  plz: string | null;
+  stadt: string | null;
   einheit_nr: string | null;
   einzug_datum: string | null;
   auszug_datum: string | null;
   status: MieterStatus;
+  notizen: string | null;
   created_at: string;
 }
 
@@ -73,6 +98,7 @@ export interface Partner {
   email: string;
   telefon: string | null;
   gewerk: PartnerGewerk;
+  beschreibung: string | null;
   notizen: string | null;
   aktiv: boolean;
   created_at: string;
@@ -99,13 +125,17 @@ export interface Todo {
   email_id: string | null;
   mieter_id: string | null;
   inserat_id: string | null;
+  vermieter_id: string | null;
   partner_id: string | null;
   use_case: string | null;
+  gewerk: PartnerGewerk | null;
   titel: string;
   beschreibung: string | null;
   kategorie: TodoKategorie | null;
   prioritaet: TodoPrioritaet;
   status: TodoStatus;
+  zuordnung_quelle: string | null;
+  zuordnung_konfidenz: string | null;
   faellig_at: string | null;
   erledigt_at: string | null;
   created_at: string;
@@ -129,7 +159,11 @@ export interface TodoWithNachricht extends TodoWithMieterInserat {
 }
 
 export interface MieterWithInserat extends Mieter {
-  inserat: Pick<Inserat, "adresse" | "stadt"> | null;
+  inserat: Pick<Inserat, "adresse" | "stadt" | "vermieter_id"> | null;
+}
+
+export interface InseratWithVermieter extends Inserat {
+  vermieter: Pick<Vermieter, "id" | "name" | "firma" | "email"> | null;
 }
 
 export const PARTNER_GEWERKE: PartnerGewerk[] = [

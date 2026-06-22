@@ -13,6 +13,7 @@ type PartnerBody = {
   telefon?: unknown;
   gewerk?: unknown;
   notizen?: unknown;
+  beschreibung?: unknown;
   aktiv?: unknown;
 };
 
@@ -38,6 +39,8 @@ function parsePartnerBody(body: PartnerBody) {
       email: body.email.trim(),
       telefon: typeof body.telefon === "string" ? body.telefon.trim() || null : null,
       gewerk: body.gewerk as PartnerGewerk,
+      beschreibung:
+        typeof body.beschreibung === "string" ? body.beschreibung.trim() || null : null,
       notizen: typeof body.notizen === "string" ? body.notizen.trim() || null : null,
       aktiv: typeof body.aktiv === "boolean" ? body.aktiv : true,
     },

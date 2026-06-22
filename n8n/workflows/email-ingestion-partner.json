@@ -6,7 +6,6 @@
         "mailbox": "INBOX",
         "postProcessAction": "read",
         "options": {
-          "customEmailConfig": "",
           "forceReconnect": 300
         }
       },
@@ -108,35 +107,31 @@
     },
     {
       "parameters": {
-        "operation": "getAll",
-        "tableId": "pastler_mieter",
-        "returnAll": false,
-        "limit": 1,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "email",
-              "keyValue": "={{ $('Raw Email').item.json.von_email }}"
-            }
-          ]
-        }
+        "method": "POST",
+        "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_resolve_zuordnung",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_von_email: $('Raw Email').item.json.von_email, p_betreff: $('Raw Email').item.json.betreff || '', p_inhalt: $('Raw Email').item.json.inhalt_text || '' }) }}",
+        "options": {}
       },
       "id": "c1d2e3f4-0005-4000-8000-000000000005",
-      "name": "Mieter-Lookup",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
+      "name": "Resolve Zuordnung",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [880, 200],
       "credentials": {
-        "supabaseApi": {
+        "httpHeaderAuth": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role (Pastler)"
+          "name": "Supabase Service Role Header (Pastler)"
         }
       }
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.\n\nVon: {{ $('Raw Email').item.json.von_email }}\nBetreff: {{ $('Raw Email').item.json.betreff }}\nInhalt: {{ $('Raw Email').item.json.inhalt_text }}\n\nAntworte NUR mit validem JSON, kein Markdown, keine Erklärung:\n{\n  \"titel\": \"Kurztitel max. 80 Zeichen\",\n  \"beschreibung\": \"Was ist zu tun\",\n  \"kategorie\": \"extern\",\n  \"prioritaet\": \"mittel\",\n  \"faellig_at\": null,\n  \"use_case\": \"defekte_beleuchtung\",\n  \"gewerk\": \"elektriker\",\n  \"partner_noetig\": true\n}\n\nRegeln:\n- kategorie: extern | mieter | intern\n- prioritaet: hoch | mittel | niedrig\n- faellig_at: YYYY-MM-DD oder null\n- use_case: maschinenlesbar snake_case (z.B. defekte_beleuchtung, wasserschaden, schluesselverlust)\n- gewerk: elektriker | sanitaer | schluessel | reinigung | hausmeister | allgemein | null\n- partner_noetig: true nur wenn externer Handwerker nötig (Glühbirne, Wasser, Schloss, Reinigung …); sonst false\n- gewerk muss zu partner_noetig passen; bei partner_noetig false gewerk null setzen"
+        "text": "Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.\n\nVon: {{ $('Raw Email').item.json.von_email }}\nBetreff: {{ $('Raw Email').item.json.betreff }}\nInhalt: {{ $('Raw Email').item.json.inhalt_text }}\n\nBereits ermittelte Zuordnung (regelbasiert):\n- mieter_id: {{ $('Resolve Zuordnung').item.json.mieter_id }}\n- inserat_id: {{ $('Resolve Zuordnung').item.json.inserat_id }}\n- vermieter_id: {{ $('Resolve Zuordnung').item.json.vermieter_id }}\n- quelle: {{ $('Resolve Zuordnung').item.json.quelle }}\n- konfidenz: {{ $('Resolve Zuordnung').item.json.konfidenz }}\n\nAntworte NUR mit validem JSON, kein Markdown, keine Erklärung:\n{\n  \"titel\": \"Kurztitel max. 80 Zeichen\",\n  \"beschreibung\": \"Was ist zu tun\",\n  \"kategorie\": \"extern\",\n  \"prioritaet\": \"mittel\",\n  \"faellig_at\": null,\n  \"use_case\": \"defekte_beleuchtung\",\n  \"gewerk\": \"elektriker\",\n  \"partner_noetig\": true\n}\n\nRegeln:\n- kategorie: extern | mieter | intern\n- prioritaet: hoch | mittel | niedrig\n- faellig_at: YYYY-MM-DD oder null\n- use_case: maschinenlesbar snake_case (z.B. defekte_beleuchtung, wasserschaden, schluesselverlust)\n- gewerk: elektriker | sanitaer | schluessel | reinigung | hausmeister | allgemein | null\n- partner_noetig: true nur wenn externer Handwerker nötig (Glühbirne, Wasser, Schloss, Reinigung …); sonst false\n- gewerk muss zu partner_noetig passen; bei partner_noetig false gewerk null setzen"
       },
       "id": "c1d2e3f4-0006-4000-8000-000000000006",
       "name": "LLM Todo Extract",
@@ -153,7 +148,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nconst llmFailed = !!$input.first().json.error;\nlet todo;\nlet llm_fallback = llmFailed || !raw.trim();\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) llm_fallback = true;\n  todo = JSON.parse(m ? m[0] : raw);\n} catch {\n  todo = {};\n  llm_fallback = true;\n}\nconst defaults = {\n  titel: 'Unbekanntes Anliegen',\n  beschreibung: raw.slice(0, 200),\n  kategorie: 'intern',\n  prioritaet: 'mittel',\n  faellig_at: null,\n  use_case: null,\n  gewerk: null,\n  partner_noetig: false,\n};\ntodo = { ...defaults, ...todo };\nif (typeof todo.partner_noetig !== 'boolean') {\n  todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;\n}\nconst validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];\nif (todo.gewerk && !validGewerke.includes(todo.gewerk)) {\n  todo.gewerk = null;\n}\nconst mieter = $('Mieter-Lookup').all()?.[0]?.json ?? null;\nconst email = $('Raw Email').item.json;\nreturn [{\n  json: {\n    ...todo,\n    llm_fallback,\n    email_id: email.id,\n    mieter_id: mieter?.id ?? null,\n    inserat_id: mieter?.inserat_id ?? null,\n  },\n}];"
+        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nconst llmFailed = !!$input.first().json.error;\nlet todo;\nlet llm_fallback = llmFailed || !raw.trim();\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) llm_fallback = true;\n  todo = JSON.parse(m ? m[0] : raw);\n} catch {\n  todo = {};\n  llm_fallback = true;\n}\nconst defaults = {\n  titel: 'Unbekanntes Anliegen',\n  beschreibung: raw.slice(0, 200),\n  kategorie: 'intern',\n  prioritaet: 'mittel',\n  faellig_at: null,\n  use_case: null,\n  gewerk: null,\n  partner_noetig: false,\n};\ntodo = { ...defaults, ...todo };\nif (typeof todo.partner_noetig !== 'boolean') {\n  todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;\n}\nconst validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];\nif (todo.gewerk && !validGewerke.includes(todo.gewerk)) {\n  todo.gewerk = null;\n}\nconst zuordnung = $('Resolve Zuordnung').first().json ?? {};\nconst email = $('Raw Email').item.json;\nreturn [{\n  json: {\n    ...todo,\n    llm_fallback,\n    email_id: email.id,\n    mieter_id: zuordnung.mieter_id ?? null,\n    inserat_id: zuordnung.inserat_id ?? null,\n    vermieter_id: zuordnung.vermieter_id ?? null,\n    zuordnung_quelle: zuordnung.quelle ?? 'unbekannt',\n    zuordnung_konfidenz: zuordnung.konfidenz ?? 'niedrig',\n  },\n}];"
       },
       "id": "c1d2e3f4-0007-4000-8000-000000000007",
       "name": "Parse Todo JSON",
@@ -175,6 +170,9 @@
             { "fieldId": "email_id", "fieldValue": "={{ $json.email_id }}" },
             { "fieldId": "mieter_id", "fieldValue": "={{ $json.mieter_id }}" },
             { "fieldId": "inserat_id", "fieldValue": "={{ $json.inserat_id }}" },
+            { "fieldId": "vermieter_id", "fieldValue": "={{ $json.vermieter_id }}" },
+            { "fieldId": "zuordnung_quelle", "fieldValue": "={{ $json.zuordnung_quelle }}" },
+            { "fieldId": "zuordnung_konfidenz", "fieldValue": "={{ $json.zuordnung_konfidenz }}" },
             { "fieldId": "use_case", "fieldValue": "={{ $json.use_case }}" },
             { "fieldId": "gewerk", "fieldValue": "={{ $json.gewerk }}" }
           ]
@@ -206,7 +204,12 @@
         },
         "fieldsUi": {
           "fieldValues": [
-            { "fieldId": "verarbeitet", "fieldValue": "true" }
+            { "fieldId": "verarbeitet", "fieldValue": "true" },
+            { "fieldId": "mieter_id", "fieldValue": "={{ $('Parse Todo JSON').item.json.mieter_id }}" },
+            { "fieldId": "inserat_id", "fieldValue": "={{ $('Parse Todo JSON').item.json.inserat_id }}" },
+            { "fieldId": "vermieter_id", "fieldValue": "={{ $('Parse Todo JSON').item.json.vermieter_id }}" },
+            { "fieldId": "zuordnung_quelle", "fieldValue": "={{ $('Parse Todo JSON').item.json.zuordnung_quelle }}" },
+            { "fieldId": "zuordnung_konfidenz", "fieldValue": "={{ $('Parse Todo JSON').item.json.zuordnung_konfidenz }}" }
           ]
         }
       },
@@ -516,11 +519,11 @@
     },
     "IF Email Saved": {
       "main": [
-        [{ "node": "Mieter-Lookup", "type": "main", "index": 0 }],
+        [{ "node": "Resolve Zuordnung", "type": "main", "index": 0 }],
         [{ "node": "Stop Duplicate", "type": "main", "index": 0 }]
       ]
     },
-    "Mieter-Lookup": {
+    "Resolve Zuordnung": {
       "main": [[{ "node": "LLM Todo Extract", "type": "main", "index": 0 }]]
     },
     "LLM Todo Extract": {

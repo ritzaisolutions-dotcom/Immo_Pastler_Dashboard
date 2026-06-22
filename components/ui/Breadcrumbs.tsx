@@ -9,6 +9,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   todos: "Todos",
   mieter: "Mieter",
   inserate: "Inserate",
+  vermieter: "Vermieter",
   partner: "Partner",
   emails: "E-Mails",
   neu: "Neu",
