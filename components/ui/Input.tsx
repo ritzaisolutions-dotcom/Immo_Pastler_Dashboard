@@ -11,7 +11,7 @@ const variantStyles: Record<InputVariant, string> = {
   light:
     "border-border bg-white text-text-primary focus:border-navy focus:ring-2 focus:ring-navy/10",
   dark:
-    "border-white/12 bg-white/7 text-white placeholder:text-white/40 focus:border-gold focus:ring-2 focus:ring-gold/20",
+    "border-white/20 bg-white/10 text-white placeholder:text-white/55 focus:border-gold focus:ring-2 focus:ring-gold/25",
 };
 
 export default function Input({
@@ -30,7 +30,7 @@ export default function Input({
           htmlFor={inputId}
           className={cn(
             "mb-1 block text-[10px] uppercase tracking-wider",
-            variant === "dark" ? "text-white/40" : "text-text-hint",
+            variant === "dark" ? "text-white/80" : "text-text-hint",
           )}
         >
           {label}

@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     template: "%s · Pastler",
   },
   description: "Internes Dashboard — Immobilienverwaltung Pastler UG",
+  icons: {
+    icon: [{ url: "/JPlogo-png.avif", type: "image/avif" }],
+    apple: "/JPlogo-png.avif",
+  },
 };
 
 export default function RootLayout({

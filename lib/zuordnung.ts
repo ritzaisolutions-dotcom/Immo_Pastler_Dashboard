@@ -4,6 +4,7 @@ export type ZuordnungQuelle =
   | "inhalt_objekt"
   | "inhalt_einheit"
   | "inhalt_mieter_name"
+  | "manuell"
   | "unbekannt";
 
 export type ZuordnungKonfidenz = "hoch" | "mittel" | "niedrig";
@@ -20,6 +21,8 @@ export function zuordnungQuelleLabel(quelle: string | null): string {
       return "Inhalt (Einheit)";
     case "inhalt_mieter_name":
       return "Inhalt (Mietername)";
+    case "manuell":
+      return "Manuell";
     case "unbekannt":
       return "Nicht zugeordnet";
     default:
@@ -47,6 +50,7 @@ export function isZuordnungQuelle(value: string): value is ZuordnungQuelle {
     "inhalt_objekt",
     "inhalt_einheit",
     "inhalt_mieter_name",
+    "manuell",
     "unbekannt",
   ].includes(value);
 }

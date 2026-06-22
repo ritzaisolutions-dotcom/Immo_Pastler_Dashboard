@@ -15,7 +15,9 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui/DataTable";
-import { inseratTypLabel, type Inserat, type Vermieter } from "@/lib/types";
+import { inseratTypLabel, type Inserat, type Mieter, type Todo, type Vermieter } from "@/lib/types";
+import Badge from "@/components/Badge";
+import TodoKategorieBoard from "@/components/TodoKategorieBoard";
 import { ArrowLeft } from "lucide-react";
 
 interface VermieterDetailPageProps {
@@ -45,6 +47,25 @@ export default async function VermieterDetailPage({ params }: VermieterDetailPag
     .order("adresse", { ascending: true });
 
   const inseratList = (inserate ?? []) as Inserat[];
+  const inseratIds = inseratList.map((i) => i.id);
+
+  const [{ data: mieterData }, { data: todosData }] = await Promise.all([
+    inseratIds.length > 0
+      ? supabase
+          .from(TABLES.mieter)
+          .select("*")
+          .in("inserat_id", inseratIds)
+          .order("name", { ascending: true })
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from(TABLES.todos)
+      .select("*")
+      .eq("vermieter_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const mieterList = (mieterData ?? []) as Mieter[];
+  const todos = (todosData ?? []) as Todo[];
 
   return (
     <div>
@@ -85,6 +106,77 @@ export default async function VermieterDetailPage({ params }: VermieterDetailPag
           />
         </CardBody>
       </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <h2 className="font-display text-xl text-text-primary">Mieter in Objekten</h2>
+        </CardHeader>
+        <CardBody>
+          {mieterList.length === 0 ? (
+            <EmptyState>Keine Mieter in den verwalteten Objekten</EmptyState>
+          ) : (
+            <DataTable>
+              <TableHead>
+                <TableHeaderCell>Name</TableHeaderCell>
+                <TableHeaderCell>Objekt</TableHeaderCell>
+                <TableHeaderCell>Einheit</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+              </TableHead>
+              <TableBody>
+                {mieterList.map((m) => {
+                  const objekt = inseratList.find((i) => i.id === m.inserat_id);
+                  return (
+                    <TableRow key={m.id}>
+                      <TableCell>
+                        <Link
+                          href={`/mieter/${m.id}`}
+                          className="font-medium text-navy hover:text-gold"
+                        >
+                          {m.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-text-secondary">
+                        {objekt ? (
+                          <Link
+                            href={`/inserate/${objekt.id}`}
+                            className="text-navy hover:text-gold"
+                          >
+                            {objekt.adresse}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-text-secondary">
+                        {m.einheit_nr ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={{ type: "mieterStatus", value: m.status }} />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </DataTable>
+          )}
+        </CardBody>
+      </Card>
+
+      <section className="mb-8">
+        <h2 className="mb-4 font-display text-xl text-text-primary">Todos</h2>
+        {todos.length === 0 ? (
+          <EmptyState>Keine Todos für diesen Vermieter</EmptyState>
+        ) : (
+          <TodoKategorieBoard
+            todos={todos}
+            showDescription
+            showStatusToggle
+            showPartnerNachricht
+            showEmailLink
+            showZuordnung
+          />
+        )}
+      </section>
 
       <Card>
         <CardHeader>

@@ -6,6 +6,7 @@ import {
   zuordnungKonfidenzLabel,
 } from "@/lib/zuordnung";
 import ZuordnungBadge from "@/components/ZuordnungBadge";
+import ZuordnungForm, { type ZuordnungOption } from "@/components/ZuordnungForm";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { type Email } from "@/lib/types";
@@ -58,6 +59,46 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
   const mieter = mieterRes.data;
   const inserat = inseratRes.data;
   const vermieter = vermieterRes.data;
+
+  const [{ data: allMieter }, { data: allInserate }, { data: allVermieter }] =
+    await Promise.all([
+      supabase
+        .from(TABLES.mieter)
+        .select(`id, name, einheit_nr, inserat_id, inserat:${TABLES.inserate}(vermieter_id)`)
+        .order("name", { ascending: true }),
+      supabase
+        .from(TABLES.inserate)
+        .select("id, adresse, stadt")
+        .order("adresse", { ascending: true }),
+      supabase
+        .from(TABLES.vermieter)
+        .select("id, name, firma")
+        .order("name", { ascending: true }),
+    ]);
+
+  const mieterOptions: ZuordnungOption[] = (allMieter ?? []).map((m) => {
+    const inseratRaw = m.inserat as
+      | { vermieter_id: string | null }
+      | { vermieter_id: string | null }[]
+      | null;
+    const inserat = Array.isArray(inseratRaw) ? inseratRaw[0] : inseratRaw;
+    return {
+      id: m.id,
+      label: m.einheit_nr ? `${m.name} (${m.einheit_nr})` : m.name,
+      inseratId: m.inserat_id,
+      vermieterId: inserat?.vermieter_id ?? null,
+    };
+  });
+
+  const inseratOptions: ZuordnungOption[] = (allInserate ?? []).map((i) => ({
+    id: i.id,
+    label: `${i.adresse}${i.stadt ? `, ${i.stadt}` : ""}`,
+  }));
+
+  const vermieterOptions: ZuordnungOption[] = (allVermieter ?? []).map((v) => ({
+    id: v.id,
+    label: v.firma ? `${v.name} (${v.firma})` : v.name,
+  }));
 
   const hasZuordnung =
     email.zuordnung_quelle != null ||
@@ -203,6 +244,23 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
           </CardBody>
         </Card>
       )}
+
+      <Card className="mb-6">
+        <CardHeader>
+          <h2 className="font-medium text-text-primary">Zuordnung bearbeiten</h2>
+        </CardHeader>
+        <CardBody>
+          <ZuordnungForm
+            emailId={email.id}
+            initialMieterId={email.mieter_id}
+            initialInseratId={email.inserat_id}
+            initialVermieterId={email.vermieter_id}
+            mieterOptions={mieterOptions}
+            inseratOptions={inseratOptions}
+            vermieterOptions={vermieterOptions}
+          />
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader>

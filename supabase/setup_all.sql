@@ -227,6 +227,12 @@ CREATE POLICY "mitarbeiter_select_pastler_emails" ON public.pastler_emails
   FOR SELECT TO authenticated
   USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'mitarbeiter');
 
+DROP POLICY IF EXISTS "mitarbeiter_update_pastler_emails" ON public.pastler_emails;
+CREATE POLICY "mitarbeiter_update_pastler_emails" ON public.pastler_emails
+  FOR UPDATE TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'mitarbeiter')
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'mitarbeiter');
+
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES ('pastler-inserate', 'pastler-inserate', true, 2097152, ARRAY['image/jpeg','image/png','image/webp'])
 ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public, file_size_limit = EXCLUDED.file_size_limit, allowed_mime_types = EXCLUDED.allowed_mime_types;

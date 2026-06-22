@@ -5,6 +5,7 @@ export const RATE_LIMITED_API_PREFIXES = [
   "/api/partner-nachrichten",
   "/api/inserate",
   "/api/mieter",
+  "/api/emails",
 ] as const;
 
 export const API_WRITE_RATE_LIMIT = {

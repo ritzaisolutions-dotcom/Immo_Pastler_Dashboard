@@ -76,6 +76,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/partner") ||
     pathname.startsWith("/api/vermieter") ||
     pathname.startsWith("/api/partner-nachrichten") ||
+    pathname.startsWith("/api/emails") ||
     pathname.startsWith("/emails") ||
     pathname.startsWith("/inserate/neu") ||
     pathname.match(/^\/inserate\/[^/]+\/bearbeiten$/) ||
@@ -157,6 +158,8 @@ export const config = {
     "/api/vermieter",
     "/api/vermieter/:path*",
     "/api/partner-nachrichten/:path*",
+    "/api/emails",
+    "/api/emails/:path*",
     "/api/inserate",
     "/api/inserate/:path*",
     "/api/mieter",

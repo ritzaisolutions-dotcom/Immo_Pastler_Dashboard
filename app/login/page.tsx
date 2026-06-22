@@ -73,7 +73,7 @@ export default function LoginPage() {
         <CardBody className="p-8">
           <div className="mb-8 text-center">
             <PastlerLogo variant="dark" showWordmark className="mx-auto" />
-            <p className="mt-4 text-sm text-white/60">Internes Dashboard</p>
+            <p className="mt-4 text-sm text-white/85">Internes Dashboard</p>
           </div>
 
           {mode === "login" ? (
@@ -106,7 +106,7 @@ export default function LoginPage() {
                     setError(null);
                     setMode("reset");
                   }}
-                  className="mt-1.5 text-xs text-white/40 transition-colors hover:text-white/70"
+                  className="mt-1.5 text-xs text-white/70 transition-colors hover:text-white"
                 >
                   Passwort vergessen?
                 </button>
@@ -129,7 +129,7 @@ export default function LoginPage() {
             </form>
           ) : (
             <form onSubmit={handleReset} className="space-y-4">
-              <p className="text-sm text-white/60">
+              <p className="text-sm text-white/85">
                 Gib deine E-Mail-Adresse ein, um einen Reset-Link anzufordern.
               </p>
               <Input
@@ -170,7 +170,7 @@ export default function LoginPage() {
                   setInfo(null);
                   setMode("login");
                 }}
-                className="w-full text-center text-xs text-white/40 transition-colors hover:text-white/70"
+                className="w-full text-center text-xs text-white/70 transition-colors hover:text-white"
               >
                 Zurück zur Anmeldung
               </button>
