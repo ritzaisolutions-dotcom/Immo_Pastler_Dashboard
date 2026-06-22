@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Badge from "@/components/Badge";
+import ZuordnungBadge from "@/components/ZuordnungBadge";
 import PartnerNachrichtPanel from "@/components/PartnerNachrichtPanel";
 import Select from "@/components/ui/Select";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -25,6 +26,7 @@ interface TodoCardProps {
   showDescription?: boolean;
   showPartnerNachricht?: boolean;
   showEmailLink?: boolean;
+  showZuordnung?: boolean;
 }
 
 export default function TodoCard({
@@ -33,6 +35,7 @@ export default function TodoCard({
   showDescription = true,
   showPartnerNachricht = false,
   showEmailLink = false,
+  showZuordnung = false,
 }: TodoCardProps) {
   const router = useRouter();
   const [status, setStatus] = useState(todo.status);
@@ -43,9 +46,12 @@ export default function TodoCard({
     "mieter" in todo && todo.mieter ? todo.mieter : null;
   const inserat =
     "inserat" in todo && todo.inserat ? todo.inserat : null;
+  const vermieter =
+    "vermieter" in todo && todo.vermieter ? todo.vermieter : null;
 
   const mieterId = mieter?.id ?? todo.mieter_id;
   const inseratId = inserat?.id ?? todo.inserat_id;
+  const vermieterId = vermieter?.id ?? todo.vermieter_id;
 
   const partnerNachricht =
     "partner_nachricht" in todo ? todo.partner_nachricht : null;
@@ -83,6 +89,12 @@ export default function TodoCard({
             )}
             <Badge variant={{ type: "prioritaet", value: todo.prioritaet }} />
             <Badge variant={{ type: "status", value: status }} />
+            {showZuordnung && todo.zuordnung_quelle && (
+              <ZuordnungBadge
+                quelle={todo.zuordnung_quelle}
+                konfidenz={todo.zuordnung_konfidenz}
+              />
+            )}
           </div>
         </div>
 
@@ -109,6 +121,17 @@ export default function TodoCard({
               >
                 {inserat.adresse}
                 {inserat.stadt ? `, ${inserat.stadt}` : ""}
+              </Link>
+            </span>
+          )}
+          {vermieterId && (vermieter?.name || todo.vermieter_id) && (
+            <span>
+              Vermieter:{" "}
+              <Link
+                href={`/vermieter/${vermieterId}`}
+                className="text-navy hover:text-gold"
+              >
+                {vermieter?.name ?? "Profil"}
               </Link>
             </span>
           )}

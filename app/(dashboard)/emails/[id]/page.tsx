@@ -4,8 +4,8 @@ import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
 import { TABLES } from "@/lib/supabase/tables";
 import {
   zuordnungKonfidenzLabel,
-  zuordnungQuelleLabel,
 } from "@/lib/zuordnung";
+import ZuordnungBadge from "@/components/ZuordnungBadge";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { type Email } from "@/lib/types";
@@ -60,19 +60,27 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
   const vermieter = vermieterRes.data;
 
   const hasZuordnung =
+    email.zuordnung_quelle != null ||
     email.mieter_id ||
     email.inserat_id ||
-    email.vermieter_id ||
-    (email.zuordnung_quelle && email.zuordnung_quelle !== "unbekannt");
+    email.vermieter_id;
 
   return (
     <div>
       <PageHeader
         title={email.betreff ?? "E-Mail"}
         subtitle={
-          <Link href="/emails" className="text-sm text-text-secondary hover:text-navy">
-            ← Zurück zu E-Mails
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/emails" className="text-sm text-text-secondary hover:text-navy">
+              ← Zurück zu E-Mails
+            </Link>
+            {email.zuordnung_quelle && (
+              <ZuordnungBadge
+                quelle={email.zuordnung_quelle}
+                konfidenz={email.zuordnung_konfidenz}
+              />
+            )}
+          </div>
         }
       />
 
@@ -119,7 +127,7 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
         </CardBody>
       </Card>
 
-      {hasZuordnung && (
+      {hasZuordnung ? (
         <Card className="mb-6">
           <CardHeader>
             <h2 className="font-medium text-text-primary">Zuordnung</h2>
@@ -128,8 +136,12 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-text-hint">Quelle</dt>
-                <dd className="text-text-primary">
-                  {zuordnungQuelleLabel(email.zuordnung_quelle)}
+                <dd>
+                  <ZuordnungBadge
+                    quelle={email.zuordnung_quelle}
+                    konfidenz={email.zuordnung_konfidenz}
+                    showKonfidenz={false}
+                  />
                 </dd>
               </div>
               <div>
@@ -180,6 +192,14 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
                 </div>
               )}
             </dl>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card className="mb-6">
+          <CardBody>
+            <p className="text-sm text-text-secondary">
+              Noch keine Zuordnung — wird bei Verarbeitung durch n8n gesetzt.
+            </p>
           </CardBody>
         </Card>
       )}

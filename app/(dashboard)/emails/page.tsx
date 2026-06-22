@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
 import { TABLES } from "@/lib/supabase/tables";
+import ZuordnungBadge from "@/components/ZuordnungBadge";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import {
@@ -62,6 +63,7 @@ export default async function EmailsPage() {
             <TableHeaderCell>Empfangen</TableHeaderCell>
             <TableHeaderCell>Von</TableHeaderCell>
             <TableHeaderCell>Betreff</TableHeaderCell>
+            <TableHeaderCell>Zuordnung</TableHeaderCell>
             <TableHeaderCell>Todo</TableHeaderCell>
           </TableHead>
           <TableBody>
@@ -83,6 +85,16 @@ export default async function EmailsPage() {
                   </TableCell>
                   <TableCell className="text-text-secondary">
                     {email.betreff ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {email.zuordnung_quelle ? (
+                      <ZuordnungBadge
+                        quelle={email.zuordnung_quelle}
+                        konfidenz={email.zuordnung_konfidenz}
+                      />
+                    ) : (
+                      <span className="text-text-hint">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {todo ? (

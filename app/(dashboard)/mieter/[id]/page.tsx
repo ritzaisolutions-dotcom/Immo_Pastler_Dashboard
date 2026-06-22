@@ -4,10 +4,11 @@ import { createClient } from "@/utils/supabase/server";
 import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
+import StammdatenProfil from "@/components/StammdatenProfil";
 import TodoKategorieBoard from "@/components/TodoKategorieBoard";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { Card, CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import {
   formatDate,
@@ -53,7 +54,9 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
 
   let todos = (await supabase
     .from(TABLES.todos)
-    .select(`*, inserat:${TABLES.inserate}(id, adresse, stadt)`)
+    .select(
+      `*, inserat:${TABLES.inserate}(id, adresse, stadt), vermieter:${TABLES.vermieter}(id, name, firma)`,
+    )
     .eq("mieter_id", id)
     .order("created_at", { ascending: false })).data as Todo[] | null;
 
@@ -99,41 +102,22 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
       />
 
       <Card className="mb-8">
-        <CardHeader>
-          <h2 className="font-display text-xl text-text-primary">Stammdaten</h2>
-        </CardHeader>
         <CardBody>
-          <dl className="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-text-hint">E-Mail</dt>
-              <dd className="text-text-primary">{mieter.email ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Telefon</dt>
-              <dd className="text-text-primary">{mieter.telefon ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Einheit</dt>
-              <dd className="text-text-primary">{mieter.einheit_nr ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Status</dt>
-              <dd>
-                <Badge variant={{ type: "mieterStatus", value: mieter.status }} />
-              </dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Einzug</dt>
-              <dd className="text-text-primary">{formatDate(mieter.einzug_datum)}</dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Auszug</dt>
-              <dd className="text-text-primary">{formatDate(mieter.auszug_datum)}</dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-text-hint">Inserat (Objekt)</dt>
-              <dd>
-                {mieter.inserat ? (
+          <StammdatenProfil
+            title="Stammdaten"
+            rows={[
+              { label: "E-Mail", value: mieter.email },
+              { label: "Telefon", value: mieter.telefon },
+              { label: "Einheit", value: mieter.einheit_nr },
+              {
+                label: "Status",
+                value: <Badge variant={{ type: "mieterStatus", value: mieter.status }} />,
+              },
+              { label: "Einzug", value: formatDate(mieter.einzug_datum) },
+              { label: "Auszug", value: formatDate(mieter.auszug_datum) },
+              {
+                label: "Inserat (Objekt)",
+                value: mieter.inserat ? (
                   <Link
                     href={`/inserate/${mieter.inserat.id}`}
                     className="text-navy hover:text-gold"
@@ -141,44 +125,39 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
                     {mieter.inserat.adresse}
                     {mieter.inserat.stadt ? `, ${mieter.inserat.stadt}` : ""}
                   </Link>
-                ) : (
-                  "—"
-                )}
-              </dd>
-            </div>
-            {mieter.inserat?.vermieter && (
-              <div className="sm:col-span-2">
-                <dt className="text-text-hint">Vermieter</dt>
-                <dd>
-                  <Link
-                    href={`/vermieter/${mieter.inserat.vermieter.id}`}
-                    className="text-navy hover:text-gold"
-                  >
-                    {mieter.inserat.vermieter.name}
-                    {mieter.inserat.vermieter.firma
-                      ? ` (${mieter.inserat.vermieter.firma})`
-                      : ""}
-                  </Link>
-                </dd>
-              </div>
-            )}
-            {(mieter.adresse || mieter.plz || mieter.stadt) && (
-              <div className="sm:col-span-2">
-                <dt className="text-text-hint">Korrespondenzadresse</dt>
-                <dd className="text-text-primary">
-                  {[mieter.adresse, [mieter.plz, mieter.stadt].filter(Boolean).join(" ")]
-                    .filter(Boolean)
-                    .join(", ") || "—"}
-                </dd>
-              </div>
-            )}
-            {mieter.notizen && (
-              <div className="sm:col-span-2">
-                <dt className="text-text-hint">Notizen</dt>
-                <dd className="whitespace-pre-wrap text-text-primary">{mieter.notizen}</dd>
-              </div>
-            )}
-          </dl>
+                ) : null,
+              },
+              ...(mieter.inserat?.vermieter
+                ? [
+                    {
+                      label: "Vermieter",
+                      value: (
+                        <Link
+                          href={`/vermieter/${mieter.inserat.vermieter.id}`}
+                          className="text-navy hover:text-gold"
+                        >
+                          {mieter.inserat.vermieter.name}
+                          {mieter.inserat.vermieter.firma
+                            ? ` (${mieter.inserat.vermieter.firma})`
+                            : ""}
+                        </Link>
+                      ),
+                    },
+                  ]
+                : []),
+              ...(mieter.adresse || mieter.plz || mieter.stadt
+                ? [
+                    {
+                      label: "Korrespondenzadresse",
+                      value: [mieter.adresse, [mieter.plz, mieter.stadt].filter(Boolean).join(" ")]
+                        .filter(Boolean)
+                        .join(", "),
+                    },
+                  ]
+                : []),
+              ...(mieter.notizen ? [{ label: "Notizen", value: mieter.notizen }] : []),
+            ]}
+          />
         </CardBody>
       </Card>
 
@@ -193,6 +172,7 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
             showStatusToggle={mitarbeiter}
             showPartnerNachricht={mitarbeiter}
             showEmailLink={mitarbeiter}
+            showZuordnung={mitarbeiter}
           />
         )}
       </section>

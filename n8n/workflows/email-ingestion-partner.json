@@ -109,29 +109,43 @@
       "parameters": {
         "method": "POST",
         "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_resolve_zuordnung",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ p_von_email: $('Raw Email').item.json.von_email, p_betreff: $('Raw Email').item.json.betreff || '', p_inhalt: $('Raw Email').item.json.inhalt_text || '' }) }}",
         "options": {}
       },
       "id": "c1d2e3f4-0005-4000-8000-000000000005",
-      "name": "Resolve Zuordnung",
+      "name": "Supabase RPC Resolve Zuordnung",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [880, 200],
       "credentials": {
-        "httpHeaderAuth": {
+        "supabaseApi": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role Header (Pastler)"
+          "name": "Supabase Service Role (Pastler)"
         }
-      }
+      },
+      "notes": "RPC — native Supabase-Node unterstützt keine Functions. Gleiche Credential wie alle anderen Supabase-Nodes."
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.\n\nVon: {{ $('Raw Email').item.json.von_email }}\nBetreff: {{ $('Raw Email').item.json.betreff }}\nInhalt: {{ $('Raw Email').item.json.inhalt_text }}\n\nBereits ermittelte Zuordnung (regelbasiert):\n- mieter_id: {{ $('Resolve Zuordnung').item.json.mieter_id }}\n- inserat_id: {{ $('Resolve Zuordnung').item.json.inserat_id }}\n- vermieter_id: {{ $('Resolve Zuordnung').item.json.vermieter_id }}\n- quelle: {{ $('Resolve Zuordnung').item.json.quelle }}\n- konfidenz: {{ $('Resolve Zuordnung').item.json.konfidenz }}\n\nAntworte NUR mit validem JSON, kein Markdown, keine Erklärung:\n{\n  \"titel\": \"Kurztitel max. 80 Zeichen\",\n  \"beschreibung\": \"Was ist zu tun\",\n  \"kategorie\": \"extern\",\n  \"prioritaet\": \"mittel\",\n  \"faellig_at\": null,\n  \"use_case\": \"defekte_beleuchtung\",\n  \"gewerk\": \"elektriker\",\n  \"partner_noetig\": true\n}\n\nRegeln:\n- kategorie: extern | mieter | intern\n- prioritaet: hoch | mittel | niedrig\n- faellig_at: YYYY-MM-DD oder null\n- use_case: maschinenlesbar snake_case (z.B. defekte_beleuchtung, wasserschaden, schluesselverlust)\n- gewerk: elektriker | sanitaer | schluessel | reinigung | hausmeister | allgemein | null\n- partner_noetig: true nur wenn externer Handwerker nötig (Glühbirne, Wasser, Schloss, Reinigung …); sonst false\n- gewerk muss zu partner_noetig passen; bei partner_noetig false gewerk null setzen"
+        "text": "Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.\n\nVon: {{ $('Raw Email').item.json.von_email }}\nBetreff: {{ $('Raw Email').item.json.betreff }}\nInhalt: {{ $('Raw Email').item.json.inhalt_text }}\n\nBereits ermittelte Zuordnung (regelbasiert):\n- mieter_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.mieter_id }}\n- inserat_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.inserat_id }}\n- vermieter_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.vermieter_id }}\n- quelle: {{ $('Supabase RPC Resolve Zuordnung').item.json.quelle }}\n- konfidenz: {{ $('Supabase RPC Resolve Zuordnung').item.json.konfidenz }}\n\nAntworte NUR mit validem JSON, kein Markdown, keine Erklärung:\n{\n  \"titel\": \"Kurztitel max. 80 Zeichen\",\n  \"beschreibung\": \"Was ist zu tun\",\n  \"kategorie\": \"extern\",\n  \"prioritaet\": \"mittel\",\n  \"faellig_at\": null,\n  \"use_case\": \"defekte_beleuchtung\",\n  \"gewerk\": \"elektriker\",\n  \"partner_noetig\": true\n}\n\nRegeln:\n- kategorie: extern | mieter | intern\n- prioritaet: hoch | mittel | niedrig\n- faellig_at: YYYY-MM-DD oder null\n- use_case: maschinenlesbar snake_case (z.B. defekte_beleuchtung, wasserschaden, schluesselverlust)\n- gewerk: elektriker | sanitaer | schluessel | reinigung | hausmeister | allgemein | null\n- partner_noetig: true nur wenn externer Handwerker nötig (Glühbirne, Wasser, Schloss, Reinigung …); sonst false\n- gewerk muss zu partner_noetig passen; bei partner_noetig false gewerk null setzen"
       },
       "id": "c1d2e3f4-0006-4000-8000-000000000006",
       "name": "LLM Todo Extract",
@@ -148,7 +162,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nconst llmFailed = !!$input.first().json.error;\nlet todo;\nlet llm_fallback = llmFailed || !raw.trim();\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) llm_fallback = true;\n  todo = JSON.parse(m ? m[0] : raw);\n} catch {\n  todo = {};\n  llm_fallback = true;\n}\nconst defaults = {\n  titel: 'Unbekanntes Anliegen',\n  beschreibung: raw.slice(0, 200),\n  kategorie: 'intern',\n  prioritaet: 'mittel',\n  faellig_at: null,\n  use_case: null,\n  gewerk: null,\n  partner_noetig: false,\n};\ntodo = { ...defaults, ...todo };\nif (typeof todo.partner_noetig !== 'boolean') {\n  todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;\n}\nconst validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];\nif (todo.gewerk && !validGewerke.includes(todo.gewerk)) {\n  todo.gewerk = null;\n}\nconst zuordnung = $('Resolve Zuordnung').first().json ?? {};\nconst email = $('Raw Email').item.json;\nreturn [{\n  json: {\n    ...todo,\n    llm_fallback,\n    email_id: email.id,\n    mieter_id: zuordnung.mieter_id ?? null,\n    inserat_id: zuordnung.inserat_id ?? null,\n    vermieter_id: zuordnung.vermieter_id ?? null,\n    zuordnung_quelle: zuordnung.quelle ?? 'unbekannt',\n    zuordnung_konfidenz: zuordnung.konfidenz ?? 'niedrig',\n  },\n}];"
+        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nconst llmFailed = !!$input.first().json.error;\nlet todo;\nlet llm_fallback = llmFailed || !raw.trim();\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) llm_fallback = true;\n  todo = JSON.parse(m ? m[0] : raw);\n} catch {\n  todo = {};\n  llm_fallback = true;\n}\nconst defaults = {\n  titel: 'Unbekanntes Anliegen',\n  beschreibung: raw.slice(0, 200),\n  kategorie: 'intern',\n  prioritaet: 'mittel',\n  faellig_at: null,\n  use_case: null,\n  gewerk: null,\n  partner_noetig: false,\n};\ntodo = { ...defaults, ...todo };\nif (typeof todo.partner_noetig !== 'boolean') {\n  todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;\n}\nconst validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];\nif (todo.gewerk && !validGewerke.includes(todo.gewerk)) {\n  todo.gewerk = null;\n}\nconst zuordnung = $('Supabase RPC Resolve Zuordnung').first().json ?? {};\nconst email = $('Raw Email').item.json;\nreturn [{\n  json: {\n    ...todo,\n    llm_fallback,\n    email_id: email.id,\n    mieter_id: zuordnung.mieter_id ?? null,\n    inserat_id: zuordnung.inserat_id ?? null,\n    vermieter_id: zuordnung.vermieter_id ?? null,\n    zuordnung_quelle: zuordnung.quelle ?? 'unbekannt',\n    zuordnung_konfidenz: zuordnung.konfidenz ?? 'niedrig',\n  },\n}];"
       },
       "id": "c1d2e3f4-0007-4000-8000-000000000007",
       "name": "Parse Todo JSON",
@@ -440,6 +454,15 @@
                 "type": "boolean",
                 "operation": "true"
               }
+            },
+            {
+              "id": "zuordnung-unbekannt",
+              "leftValue": "={{ $('Parse Todo JSON').item.json.zuordnung_quelle }}",
+              "rightValue": "unbekannt",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "or"
@@ -455,7 +478,7 @@
       "parameters": {
         "operation": "sendMessage",
         "chatId": "CONFIGURE_TELEGRAM_CHAT_ID",
-        "text": "=Pastler — neues Todo\n\nTitel: {{ $('Parse Todo JSON').item.json.titel }}\nPriorität: {{ $('Parse Todo JSON').item.json.prioritaet }}\nKategorie: {{ $('Parse Todo JSON').item.json.kategorie }}\nTodo-ID: {{ $('Insert Todo').item.json.id }}{{ $('Parse Todo JSON').item.json.llm_fallback ? '\\n\\n⚠️ Mistral-Fallback — bitte manuell prüfen' : '' }}",
+        "text": "=Pastler — neues Todo\n\nTitel: {{ $('Parse Todo JSON').item.json.titel }}\nPriorität: {{ $('Parse Todo JSON').item.json.prioritaet }}\nKategorie: {{ $('Parse Todo JSON').item.json.kategorie }}\nTodo-ID: {{ $('Insert Todo').item.json.id }}{{ $('Parse Todo JSON').item.json.llm_fallback ? '\\n\\n⚠️ Mistral-Fallback — bitte manuell prüfen' : '' }}{{ $('Parse Todo JSON').item.json.zuordnung_quelle === 'unbekannt' ? '\\n\\n📎 Manuelle Zuordnung nötig (Mieter/Inserat/Vermieter)' : '' }}",
         "additionalFields": {}
       },
       "id": "c1d2e3f4-0019-4000-8000-000000000019",
@@ -519,11 +542,11 @@
     },
     "IF Email Saved": {
       "main": [
-        [{ "node": "Resolve Zuordnung", "type": "main", "index": 0 }],
+        [{ "node": "Supabase RPC Resolve Zuordnung", "type": "main", "index": 0 }],
         [{ "node": "Stop Duplicate", "type": "main", "index": 0 }]
       ]
     },
-    "Resolve Zuordnung": {
+    "Supabase RPC Resolve Zuordnung": {
       "main": [[{ "node": "LLM Todo Extract", "type": "main", "index": 0 }]]
     },
     "LLM Todo Extract": {

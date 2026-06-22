@@ -87,6 +87,36 @@ INSERT INTO pastler_emails (id, message_id, von_email, von_name, betreff, inhalt
     E'Sehr geehrte Pastler Immobilienberatung,\n\nin unserem Ladenlokal (Marktplatz 3, EG) ist die Heizung seit dem Wochenende ausgefallen.\n\nBitte umgehend Techniker schicken.\n\nGastronomie Mayen GmbH',
     NOW() - INTERVAL '30 minutes',
     false
+  ),
+  (
+    '55555555-5555-5555-5555-555555555506',
+    'demo-sales-006@pastler.local',
+    'auftrag@fremd-handwerker.demo',
+    'Fremd Handwerker GmbH',
+    'Beleuchtung Hauptstraße 12 — Rückfrage',
+    E'Guten Tag,\n\nwir wurden beauftragt, die Beleuchtung im Treppenhaus der Hauptstraße 12 in Koblenz zu prüfen. Bitte um Freigabe und Ansprechpartner vor Ort.\n\nFremd Handwerker GmbH',
+    NOW() - INTERVAL '6 hours',
+    true
+  ),
+  (
+    '55555555-5555-5555-5555-555555555507',
+    'demo-sales-007@pastler.local',
+    'hans.mueller@demo-pastler.de',
+    'Hans Müller',
+    'Dachrinne Rheinweg 45',
+    E'Sehr geehrte Hausverwaltung,\n\nbitte lassen Sie die Dachrinne am Objekt Rheinweg 45 in Koblenz reinigen.\n\nHans Müller (Vermieter)',
+    NOW() - INTERVAL '8 hours',
+    true
+  ),
+  (
+    '55555555-5555-5555-5555-555555555508',
+    'demo-sales-008@pastler.local',
+    'nachbar@unbekannt.demo',
+    'Nachbarin Weber',
+    'Lärm von Thomas Weber',
+    E'Hallo,\n\nich wohne neben Thomas Weber in der Hauptstraße 12 (3. OG links) und möchte eine Beschwerde wegen nächtlichem Lärm melden.\n\nMit freundlichen Grüßen',
+    NOW() - INTERVAL '12 hours',
+    true
   )
 ON CONFLICT (id) DO UPDATE SET
   von_email = EXCLUDED.von_email,
@@ -141,6 +171,28 @@ UPDATE pastler_emails SET
   zuordnung_quelle = 'absender_mieter',
   zuordnung_konfidenz = 'hoch'
 WHERE id = '55555555-5555-5555-5555-555555555505';
+
+UPDATE pastler_emails SET
+  inserat_id = '11111111-1111-1111-1111-111111111101',
+  vermieter_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+  zuordnung_quelle = 'inhalt_objekt',
+  zuordnung_konfidenz = 'mittel'
+WHERE id = '55555555-5555-5555-5555-555555555506';
+
+UPDATE pastler_emails SET
+  vermieter_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+  inserat_id = '11111111-1111-1111-1111-111111111102',
+  zuordnung_quelle = 'absender_vermieter',
+  zuordnung_konfidenz = 'hoch'
+WHERE id = '55555555-5555-5555-5555-555555555507';
+
+UPDATE pastler_emails SET
+  mieter_id = '22222222-2222-2222-2222-222222222201',
+  inserat_id = '11111111-1111-1111-1111-111111111101',
+  vermieter_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+  zuordnung_quelle = 'inhalt_mieter_name',
+  zuordnung_konfidenz = 'niedrig'
+WHERE id = '55555555-5555-5555-5555-555555555508';
 
 INSERT INTO pastler_todos (
   id, email_id, mieter_id, inserat_id, vermieter_id, partner_id, use_case, gewerk,
@@ -251,6 +303,51 @@ INSERT INTO pastler_todos (
     'Nebenkostenabrechnung Mieter Weber',
     'Einzelabrechnung 2025 an Thomas Weber versenden.',
     'mieter', 'niedrig', 'erledigt', NULL
+  ),
+  (
+    '33333333-3333-3333-3333-333333333308',
+    '55555555-5555-5555-5555-555555555506',
+    NULL,
+    '11111111-1111-1111-1111-111111111101',
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+    NULL,
+    NULL,
+    NULL,
+    'inhalt_objekt',
+    'mittel',
+    'Fremdhandwerker — Beleuchtung Hauptstraße 12',
+    'Unbekannter Absender, Objektadresse im Text erkannt — Freigabe klären.',
+    'intern', 'mittel', 'offen', CURRENT_DATE + 3
+  ),
+  (
+    '33333333-3333-3333-3333-333333333309',
+    '55555555-5555-5555-5555-555555555507',
+    NULL,
+    '11111111-1111-1111-1111-111111111102',
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+    NULL,
+    NULL,
+    NULL,
+    'absender_vermieter',
+    'hoch',
+    'Dachrinne Rheinweg 45 reinigen',
+    'Vermieter Hans Müller meldet Reinigungsbedarf am Objekt Rheinweg 45.',
+    'intern', 'mittel', 'offen', CURRENT_DATE + 7
+  ),
+  (
+    '33333333-3333-3333-3333-333333333310',
+    '55555555-5555-5555-5555-555555555508',
+    '22222222-2222-2222-2222-222222222201',
+    '11111111-1111-1111-1111-111111111101',
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01',
+    NULL,
+    NULL,
+    NULL,
+    'inhalt_mieter_name',
+    'niedrig',
+    'Lärmbeschwerde Nachbar — Thomas Weber',
+    'Mietername im Text erkannt, Absender unbekannt — Rücksprache mit Mieter.',
+    'mieter', 'mittel', 'offen', CURRENT_DATE + 2
   )
 ON CONFLICT (id) DO UPDATE SET
   email_id = EXCLUDED.email_id,

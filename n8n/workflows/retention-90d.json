@@ -22,8 +22,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_retention_purge_email_body_90d",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -42,17 +42,17 @@
         "jsonBody": "={}"
       },
       "id": "a1b2c3d4-0002-4000-8000-000000000002",
-      "name": "RPC Purge Email Body",
+      "name": "Supabase RPC Purge Email Body 90d",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 300],
       "credentials": {
-        "httpHeaderAuth": {
+        "supabaseApi": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role Header (Pastler)"
+          "name": "Supabase Service Role (Pastler)"
         }
       },
-      "notes": "Credential: Header Name=apikey, Value=<SERVICE_ROLE_KEY>. Zusätzlich Header Authorization=Bearer <SERVICE_ROLE_KEY> manuell ergänzen (oder zweites Header-Paar in n8n)."
+      "notes": "RPC — gleiche Supabase-Credential wie alle Table-Nodes."
     }
   ],
   "connections": {
@@ -60,7 +60,7 @@
       "main": [
         [
           {
-            "node": "RPC Purge Email Body",
+            "node": "Supabase RPC Purge Email Body 90d",
             "type": "main",
             "index": 0
           }

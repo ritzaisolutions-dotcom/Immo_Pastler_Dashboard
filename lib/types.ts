@@ -152,6 +152,7 @@ export interface TodoWithInserat extends Todo {
 export interface TodoWithMieterInserat extends Todo {
   mieter: Pick<Mieter, "name" | "id"> | null;
   inserat: Pick<Inserat, "adresse" | "stadt" | "id"> | null;
+  vermieter?: Pick<Vermieter, "id" | "name" | "firma"> | null;
 }
 
 export interface TodoWithNachricht extends TodoWithMieterInserat {

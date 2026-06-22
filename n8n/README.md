@@ -20,28 +20,33 @@ Workflow-Dateien liegen unter [`workflows/`](./workflows/):
 2. JSON-Datei wählen
 3. Credentials zuweisen (Platzhalter `CONFIGURE_IN_N8N` ersetzen):
    - **Pastler IMAP** — Posteingang der Verwaltung
-   - **Supabase Service Role (Pastler)** — Host + Service-Role-Key für Supabase-Nodes (Workflow 1)
-   - **Supabase Service Role Header (Pastler)** — für Retention-HTTP-Nodes (Workflow 2+3, siehe unten)
+   - **Supabase Service Role (Pastler)** — Host `https://htyeflqymmbcjhvknjoe.supabase.co` + Service-Role-Key (**eine Credential für alle Supabase-Nodes**, inkl. RPC)
    - **Mistral API** — EU-Region, Modell `mistral-small-latest`
    - **Pastler Telegram Bot** — Bot-Token von @BotFather; Chat-ID in Node `Telegram Alert` eintragen (siehe unten)
 4. IMAP Trigger: Poll-Intervall **5 Minuten**, „Mark as read“ aktivieren
 5. Migration **`008_retention_rpc.sql`** in Supabase ausführen (einmalig, RPC-Funktionen für Retention)
 6. Workflow **aktivieren**
 
-> **Kein Postgres in n8n nötig.** Retention läuft über Supabase REST (`POST /rest/v1/rpc/...`) mit Service-Role-Key — dieselbe Credential-Klasse wie Workflow 1, nur als HTTP-Request.
+## Supabase-Zugriff (einheitlich)
 
-### Retention-Credential (HTTP Request)
+| Zugriff | Node-Typ | Credential |
+|---------|----------|------------|
+| Tabellen (SELECT/INSERT/UPDATE) | **Supabase** (nativ) | `Supabase Service Role (Pastler)` |
+| Postgres-Funktionen (RPC) | **HTTP Request** | dieselbe Credential via **Predefined Credential Type → supabaseApi** |
 
-Supabase RPC braucht **zwei** Header (gleicher Service-Role-Key):
+Der native Supabase-Node unterstützt **keine RPC-Aufrufe** (offizielle n8n-Empfehlung). Deshalb heißen RPC-Nodes `Supabase RPC …` und nutzen HTTP Request — aber mit **derselben** `supabaseApi`-Credential (nicht mehr eine separate Header-Auth).
 
-| Header | Wert |
-|--------|------|
-| `apikey` | `<SUPABASE_SERVICE_ROLE_KEY>` |
-| `Authorization` | `Bearer <SUPABASE_SERVICE_ROLE_KEY>` |
+**RPC-Node-Template (alle Workflows identisch):**
 
-In n8n pro Retention-Node: Header Auth für `apikey` + zusätzlicher Header `Authorization` manuell setzen.
+- Authentication: **Predefined Credential Type** → `supabaseApi` → `Supabase Service Role (Pastler)`
+- Method: `POST`
+- URL: `https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/<funktionsname>`
+- Headers: `Content-Type: application/json`, `Prefer: return=representation`
+- Body: JSON mit Funktionsparametern (oder `{}` für parameterlose Retention-RPCs)
 
-**Test (curl):**
+> **Kein Postgres in n8n nötig.** Keine zweite Supabase-Credential (`httpHeaderAuth`) mehr.
+
+### RPC testen (curl)
 
 ```bash
 curl -X POST "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_retention_purge_email_body_90d" \
@@ -55,7 +60,7 @@ Erwartung: JSON-Zahl (Anzahl betroffener Zeilen), z. B. `0`.
 
 ### Telegram-Alert (Workflow 1)
 
-Nach jedem neuen Todo — **nur** wenn `prioritaet = hoch` **oder** Mistral-Fallback (`llm_fallback`):
+Nach jedem neuen Todo — **nur** wenn `prioritaet = hoch`, Mistral-Fallback (`llm_fallback`) **oder** `zuordnung_quelle = unbekannt`:
 
 | Node | Funktion |
 |------|----------|
@@ -108,13 +113,13 @@ Todo-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 | 3 | IF New Email | `$json.id` leer → neu; sonst Stop Duplicate |
 | 4 | Raw Email | Insert `pastler_emails`; `continueOnFail: true` |
 | 5 | IF Email Saved | `$json.id` gesetzt → weiter; sonst Stop (Race/Duplikat) |
-| 6 | HTTP Request | RPC `pastler_resolve_zuordnung` (Credential: Supabase Service Role Header) |
+| 6 | HTTP Request | `Supabase RPC Resolve Zuordnung` → `pastler_resolve_zuordnung` (supabaseApi) |
 | 7 | LLM Chain | Mistral — Todo + Use-Case + Gewerk (`continueOnFail: true`) |
 | 8 | Code Node | JSON parse + Zuordnung aus Node 6, `llm_fallback`, `gewerk`, `partner_noetig` |
 | 9 | Supabase insert | `pastler_todos` inkl. `vermieter_id`, `zuordnung_*` |
 | 10 | Supabase update | `pastler_emails`: `verarbeitet`, Zuordnungsfelder |
-| 11 | IF Alert | `prioritaet = hoch` OR `llm_fallback` |
-| 12 | Telegram | Nur Metadaten an deine Chat-ID (DSGVO) |
+| 11 | IF Alert | `prioritaet = hoch` OR `llm_fallback` OR `zuordnung_quelle = unbekannt` |
+| 12 | Telegram | Metadaten + Hinweis bei Fallback / manueller Zuordnung (DSGVO) |
 | 13 | IF | `partner_noetig === true` && `gewerk` gesetzt |
 | 14 | Supabase getAll | `pastler_partner` WHERE `gewerk` + `aktiv = true` LIMIT 1 |
 | 15 | IF | Partner gefunden |
@@ -126,6 +131,21 @@ Nodes 11–12 laufen parallel nach Insert Todo (Alert-Zweig). Partner-Kette ab N
 
 **Freigabe:** Entwürfe werden **nicht** automatisch versendet. Mitarbeiter prüfen im Dashboard unter `/todos` und senden manuell (SMTP via Next.js API).
 
+### Zuordnungslogik (`pastler_resolve_zuordnung`)
+
+RPC wird in Node 6 aufgerufen. Rückgabe: `{ mieter_id, inserat_id, vermieter_id, quelle, konfidenz }`.
+
+| Stufe | `zuordnung_quelle` | Logik | Konfidenz |
+|-------|-------------------|-------|-----------|
+| 1 | `absender_mieter` | `mieter.email = von_email` | hoch |
+| 2 | `absender_vermieter` | `vermieter.email = von_email` | hoch |
+| 3 | `inhalt_objekt` | Adresse/PLZ/Stadt im Betreff+Text | mittel |
+| 4 | `inhalt_einheit` | `einheit_nr` im Text | mittel |
+| 5 | `inhalt_mieter_name` | Mietername im Text | niedrig |
+| 6 | `unbekannt` | Kein Treffer → Telegram-Hinweis „Manuelle Zuordnung“ | — |
+
+Felder werden auf `pastler_emails` und `pastler_todos` geschrieben (`zuordnung_quelle`, `zuordnung_konfidenz`).
+
 ### Mistral Prompt — Todo-Extraktion (Node 7)
 
 ```
@@ -136,11 +156,11 @@ Betreff: {{ $('Raw Email').item.json.betreff }}
 Inhalt: {{ $('Raw Email').item.json.inhalt_text }}
 
 Bereits ermittelte Zuordnung (regelbasiert):
-- mieter_id: {{ $('Resolve Zuordnung').item.json.mieter_id }}
-- inserat_id: {{ $('Resolve Zuordnung').item.json.inserat_id }}
-- vermieter_id: {{ $('Resolve Zuordnung').item.json.vermieter_id }}
-- quelle: {{ $('Resolve Zuordnung').item.json.quelle }}
-- konfidenz: {{ $('Resolve Zuordnung').item.json.konfidenz }}
+- mieter_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.mieter_id }}
+- inserat_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.inserat_id }}
+- vermieter_id: {{ $('Supabase RPC Resolve Zuordnung').item.json.vermieter_id }}
+- quelle: {{ $('Supabase RPC Resolve Zuordnung').item.json.quelle }}
+- konfidenz: {{ $('Supabase RPC Resolve Zuordnung').item.json.konfidenz }}
 
 Antworte NUR mit validem JSON, kein Markdown, keine Erklärung:
 {
@@ -197,7 +217,7 @@ const validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'haus
 if (todo.gewerk && !validGewerke.includes(todo.gewerk)) {
   todo.gewerk = null;
 }
-const zuordnung = $('Resolve Zuordnung').first().json ?? {};
+const zuordnung = $('Supabase RPC Resolve Zuordnung').first().json ?? {};
 const email = $('Raw Email').item.json;
 return [{
   json: {
@@ -266,14 +286,14 @@ return [{
 
 - **Datei:** [`workflows/retention-90d.json`](./workflows/retention-90d.json)
 - **Schedule:** Daily at 02:00
-- **Node:** HTTP Request → `POST /rest/v1/rpc/pastler_retention_purge_email_body_90d`
+- **Node:** `Supabase RPC Purge Email Body 90d` → `POST /rest/v1/rpc/pastler_retention_purge_email_body_90d` (supabaseApi)
 - **Supabase:** Funktion in [`008_retention_rpc.sql`](../supabase/migrations/008_retention_rpc.sql)
 
 ## Workflow 3: Extended Retention (Cron)
 
 - **Datei:** [`workflows/retention-extended.json`](./workflows/retention-extended.json)
 - **Schedule:** Daily at 02:30
-- **Nodes:** drei parallele HTTP-RPC-Aufrufe:
+- **Nodes:** drei parallele `Supabase RPC …`-Nodes (HTTP + supabaseApi):
 
 | RPC-Funktion | Zweck |
 |--------------|--------|

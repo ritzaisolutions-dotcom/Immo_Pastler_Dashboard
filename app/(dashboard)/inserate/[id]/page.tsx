@@ -5,6 +5,7 @@ import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 import ProfileHeader from "@/components/ProfileHeader";
+import StammdatenProfil from "@/components/StammdatenProfil";
 import TodoKategorieBoard from "@/components/TodoKategorieBoard";
 import EmptyState from "@/components/ui/EmptyState";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -113,31 +114,19 @@ export default async function InseratDetailPage({
       />
 
       <Card className="mb-8">
-        <CardHeader>
-          <h2 className="font-display text-xl text-text-primary">Stammdaten</h2>
-        </CardHeader>
         <CardBody>
-          <dl className="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-text-hint">PLZ / Stadt</dt>
-              <dd className="text-text-primary">
-                {[inserat.plz, inserat.stadt].filter(Boolean).join(" ") || "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Typ</dt>
-              <dd>
-                <Badge variant={{ type: "inseratTyp", value: inserat.typ }} />
-              </dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Einheiten</dt>
-              <dd className="text-text-primary">{inserat.einheiten ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-text-hint">Vermieter</dt>
-              <dd className="text-text-primary">
-                {inserat.vermieter ? (
+          <StammdatenProfil
+            title="Stammdaten"
+            subtitle={[inserat.adresse, inserat.plz, inserat.stadt].filter(Boolean).join(", ")}
+            rows={[
+              {
+                label: "Typ",
+                value: <Badge variant={{ type: "inseratTyp", value: inserat.typ }} />,
+              },
+              { label: "Einheiten", value: inserat.einheiten },
+              {
+                label: "Vermieter",
+                value: inserat.vermieter ? (
                   <Link
                     href={`/vermieter/${inserat.vermieter.id}`}
                     className="text-navy hover:text-gold"
@@ -146,32 +135,23 @@ export default async function InseratDetailPage({
                     {inserat.vermieter.firma ? ` (${inserat.vermieter.firma})` : ""}
                   </Link>
                 ) : (
-                  inserat.eigentuemer_name ?? "—"
-                )}
-                {(inserat.vermieter?.email ?? inserat.eigentuemer_email) && (
-                  <span className="block text-text-secondary">
-                    {inserat.vermieter?.email ?? inserat.eigentuemer_email}
-                  </span>
-                )}
-              </dd>
-            </div>
-            {inserat.beschreibung && (
-              <div className="sm:col-span-2">
-                <dt className="text-text-hint">Objektbeschreibung</dt>
-                <dd className="whitespace-pre-wrap text-text-primary">
-                  {inserat.beschreibung}
-                </dd>
-              </div>
-            )}
-            {inserat.notizen && (
-              <div className="sm:col-span-2">
-                <dt className="text-text-hint">Notizen</dt>
-                <dd className="whitespace-pre-wrap text-text-primary">
-                  {inserat.notizen}
-                </dd>
-              </div>
-            )}
-          </dl>
+                  inserat.eigentuemer_name
+                ),
+              },
+              ...(inserat.vermieter?.email || inserat.eigentuemer_email
+                ? [
+                    {
+                      label: "Vermieter E-Mail",
+                      value: inserat.vermieter?.email ?? inserat.eigentuemer_email,
+                    },
+                  ]
+                : []),
+              ...(inserat.beschreibung
+                ? [{ label: "Objektbeschreibung", value: inserat.beschreibung }]
+                : []),
+              ...(inserat.notizen ? [{ label: "Notizen", value: inserat.notizen }] : []),
+            ]}
+          />
         </CardBody>
       </Card>
 
@@ -235,6 +215,7 @@ export default async function InseratDetailPage({
             showStatusToggle={mitarbeiter}
             showPartnerNachricht={mitarbeiter}
             showEmailLink={mitarbeiter}
+            showZuordnung={mitarbeiter}
           />
         )}
       </section>

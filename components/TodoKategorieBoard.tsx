@@ -13,6 +13,7 @@ type TodoKategorieBoardProps = {
   showStatusToggle: boolean;
   showPartnerNachricht: boolean;
   showEmailLink?: boolean;
+  showZuordnung?: boolean;
 };
 
 export default function TodoKategorieBoard({
@@ -21,6 +22,7 @@ export default function TodoKategorieBoard({
   showStatusToggle,
   showPartnerNachricht,
   showEmailLink = false,
+  showZuordnung = false,
 }: TodoKategorieBoardProps) {
   const byKategorie = TODO_KATEGORIEN.map((kategorie) => ({
     kategorie,
@@ -48,6 +50,7 @@ export default function TodoKategorieBoard({
                   showStatusToggle={showStatusToggle}
                   showPartnerNachricht={showPartnerNachricht}
                   showEmailLink={showEmailLink}
+                  showZuordnung={showZuordnung}
                 />
               ))
             )}

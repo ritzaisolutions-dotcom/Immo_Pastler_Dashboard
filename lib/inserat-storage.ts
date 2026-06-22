@@ -1,4 +1,5 @@
-export const INSERAT_STORAGE_BUCKET = "pastler-inserate";
+export const INSERAT_STORAGE_BUCKET =
+  process.env.NEXT_PUBLIC_INSERAT_STORAGE_BUCKET ?? "pastler-inserate";
 
 export const INSERAT_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 

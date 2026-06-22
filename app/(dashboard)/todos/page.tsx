@@ -43,7 +43,7 @@ export default async function TodosPage({ searchParams }: TodosPageProps) {
   let query = supabase
     .from(TABLES.todos)
     .select(
-      `*, mieter:${TABLES.mieter}(id, name), inserat:${TABLES.inserate}(id, adresse, stadt)`,
+      `*, mieter:${TABLES.mieter}(id, name), inserat:${TABLES.inserate}(id, adresse, stadt), vermieter:${TABLES.vermieter}(id, name, firma)`,
     )
     .order(sortColumn, { ascending: sortAscending });
 
@@ -144,6 +144,7 @@ export default async function TodosPage({ searchParams }: TodosPageProps) {
               showStatusToggle={showStatusToggle}
               showPartnerNachricht={showStatusToggle}
               showEmailLink={showStatusToggle}
+              showZuordnung={showStatusToggle}
             />
           ))}
         </div>

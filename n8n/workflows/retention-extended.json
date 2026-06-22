@@ -22,8 +22,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_retention_anonymize_emails_180d",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -42,14 +42,14 @@
         "jsonBody": "={}"
       },
       "id": "b1b2c3d4-0002-4000-8000-000000000002",
-      "name": "RPC Anonymize 180d",
+      "name": "Supabase RPC Anonymize 180d",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 200],
       "credentials": {
-        "httpHeaderAuth": {
+        "supabaseApi": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role Header (Pastler)"
+          "name": "Supabase Service Role (Pastler)"
         }
       }
     },
@@ -57,8 +57,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_retention_delete_emails_365d",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -77,14 +77,14 @@
         "jsonBody": "={}"
       },
       "id": "b1b2c3d4-0003-4000-8000-000000000003",
-      "name": "RPC Delete Emails 365d",
+      "name": "Supabase RPC Delete Emails 365d",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 300],
       "credentials": {
-        "httpHeaderAuth": {
+        "supabaseApi": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role Header (Pastler)"
+          "name": "Supabase Service Role (Pastler)"
         }
       }
     },
@@ -92,8 +92,8 @@
       "parameters": {
         "method": "POST",
         "url": "https://htyeflqymmbcjhvknjoe.supabase.co/rest/v1/rpc/pastler_retention_clear_todo_descriptions_365d",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -112,14 +112,14 @@
         "jsonBody": "={}"
       },
       "id": "b1b2c3d4-0004-4000-8000-000000000004",
-      "name": "RPC Clear Todo Descriptions 365d",
+      "name": "Supabase RPC Clear Todo Descriptions 365d",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [480, 400],
       "credentials": {
-        "httpHeaderAuth": {
+        "supabaseApi": {
           "id": "CONFIGURE_IN_N8N",
-          "name": "Supabase Service Role Header (Pastler)"
+          "name": "Supabase Service Role (Pastler)"
         }
       }
     }
@@ -129,17 +129,17 @@
       "main": [
         [
           {
-            "node": "RPC Anonymize 180d",
+            "node": "Supabase RPC Anonymize 180d",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RPC Delete Emails 365d",
+            "node": "Supabase RPC Delete Emails 365d",
             "type": "main",
             "index": 0
           },
           {
-            "node": "RPC Clear Todo Descriptions 365d",
+            "node": "Supabase RPC Clear Todo Descriptions 365d",
             "type": "main",
             "index": 0
           }
