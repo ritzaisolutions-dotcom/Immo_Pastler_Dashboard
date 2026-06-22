@@ -16,7 +16,10 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Pastler Dashboard",
+  title: {
+    default: "Pastler Immobilienberatung",
+    template: "%s · Pastler",
+  },
   description: "Internes Dashboard — Immobilienverwaltung Pastler UG",
 };
 
