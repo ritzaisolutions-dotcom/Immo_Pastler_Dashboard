@@ -1,8 +1,19 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
+import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
 import MieterSearch from "@/components/MieterSearch";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
+import {
+  DataTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/DataTable";
 import { type MieterWithInserat } from "@/lib/types";
 
 interface MieterPageProps {
@@ -12,6 +23,10 @@ interface MieterPageProps {
 export default async function MieterPage({ searchParams }: MieterPageProps) {
   const { q } = await searchParams;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const mitarbeiter = isMitarbeiter(user);
 
   let query = supabase
     .from(TABLES.mieter)
@@ -38,63 +53,82 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
 
   return (
     <div>
-      <h1 className="mb-6 font-display text-3xl text-text-primary">Mieter</h1>
+      <PageHeader
+        title="Mieter"
+        actions={
+          mitarbeiter ? (
+            <Link
+              href="/mieter/neu"
+              className="inline-flex items-center justify-center rounded-[4px] bg-navy px-4 py-2 text-sm text-white transition-colors hover:bg-navy-mid"
+            >
+              Neuer Mieter
+            </Link>
+          ) : undefined
+        }
+      />
 
-      <MieterSearch initialQuery={q ?? ""} />
+      <div className="mb-6">
+        <MieterSearch initialQuery={q ?? ""} />
+      </div>
 
       {mieter.length === 0 ? (
-        <p className="mt-6 text-sm text-text-secondary">Keine Mieter gefunden</p>
+        <EmptyState>Keine Mieter gefunden</EmptyState>
       ) : (
-        <div className="mt-6 overflow-hidden border border-border bg-white rounded-[4px]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-warm-white text-left text-xs uppercase tracking-wider text-text-hint">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">E-Mail</th>
-                <th className="px-4 py-3">Inserat</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Offene Todos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mieter.map((m, index) => (
-                <tr
-                  key={m.id}
-                  className="border-b border-border last:border-0 hover:bg-warm-white/50"
-                >
-                  <td className="px-4 py-3">
+        <DataTable>
+          <TableHead>
+            <TableHeaderCell>Name</TableHeaderCell>
+            <TableHeaderCell>E-Mail</TableHeaderCell>
+            <TableHeaderCell>Inserat</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>Offene Todos</TableHeaderCell>
+          </TableHead>
+          <TableBody>
+            {mieter.map((m, index) => (
+              <TableRow key={m.id}>
+                <TableCell>
+                  <Link
+                    href={`/mieter/${m.id}`}
+                    className="font-medium text-navy hover:text-gold"
+                  >
+                    {m.name}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-text-secondary">
+                  {m.email ?? "—"}
+                </TableCell>
+                <TableCell className="text-text-secondary">
+                  {m.inserat ? (
+                    <Link
+                      href={`/inserate/${m.inserat_id}`}
+                      className="text-navy hover:text-gold"
+                    >
+                      {m.inserat.adresse}
+                      {m.inserat.stadt ? `, ${m.inserat.stadt}` : ""}
+                      {m.einheit_nr ? ` · ${m.einheit_nr}` : ""}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={{ type: "mieterStatus", value: m.status }} />
+                </TableCell>
+                <TableCell>
+                  {openTodoCounts[index] > 0 ? (
                     <Link
                       href={`/todos?mieter_id=${m.id}`}
-                      className="font-medium text-navy hover:text-gold"
+                      className="inline-block rounded-[4px] bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning hover:opacity-90"
                     >
-                      {m.name}
+                      {openTodoCounts[index]}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {m.email ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {m.inserat
-                      ? `${m.inserat.adresse}, ${m.inserat.stadt ?? ""}${m.einheit_nr ? ` · ${m.einheit_nr}` : ""}`
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge variant={{ type: "mieterStatus", value: m.status }} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {openTodoCounts[index] > 0 ? (
-                      <span className="inline-block bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning rounded-[4px]">
-                        {openTodoCounts[index]}
-                      </span>
-                    ) : (
-                      <span className="text-text-hint">0</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    <span className="text-text-hint">0</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
       )}
     </div>
   );

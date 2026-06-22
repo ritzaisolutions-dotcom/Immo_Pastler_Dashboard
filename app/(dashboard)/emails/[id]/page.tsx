@@ -1,0 +1,114 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
+import { TABLES } from "@/lib/supabase/tables";
+import PageHeader from "@/components/ui/PageHeader";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { type Email } from "@/lib/types";
+
+interface EmailDetailPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function EmailDetailPage({ params }: EmailDetailPageProps) {
+  const { id } = await params;
+  const { supabase } = await requireMitarbeiterPage();
+
+  const { data: emailData } = await supabase
+    .from(TABLES.emails)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!emailData) {
+    notFound();
+  }
+
+  const email = emailData as Email;
+
+  const { data: todo } = await supabase
+    .from(TABLES.todos)
+    .select("id, titel, mieter_id, inserat_id")
+    .eq("email_id", id)
+    .maybeSingle();
+
+  let todoHref: string | null = null;
+  if (todo?.mieter_id) {
+    todoHref = `/todos?mieter_id=${todo.mieter_id}`;
+  } else if (todo?.inserat_id) {
+    todoHref = `/todos?inserat_id=${todo.inserat_id}`;
+  }
+
+  return (
+    <div>
+      <PageHeader
+        title={email.betreff ?? "E-Mail"}
+        subtitle={
+          <Link href="/emails" className="text-sm text-text-secondary hover:text-navy">
+            ← Zurück zu E-Mails
+          </Link>
+        }
+      />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <h2 className="font-medium text-text-primary">Metadaten</h2>
+        </CardHeader>
+        <CardBody>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-text-hint">Von</dt>
+              <dd className="text-text-primary">
+                {email.von_name ?? email.von_email}
+                <span className="block text-text-secondary">{email.von_email}</span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-hint">Empfangen</dt>
+              <dd className="text-text-primary">
+                {new Date(email.empfangen_at).toLocaleString("de-DE")}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-hint">Verarbeitet</dt>
+              <dd className="text-text-primary">
+                {email.verarbeitet ? "Ja" : "Nein"}
+              </dd>
+            </div>
+            {todo && (
+              <div>
+                <dt className="text-text-hint">Verknüpftes Todo</dt>
+                <dd>
+                  {todoHref ? (
+                    <Link href={todoHref} className="text-navy hover:text-gold">
+                      {todo.titel}
+                    </Link>
+                  ) : (
+                    <span className="text-text-primary">{todo.titel}</span>
+                  )}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <h2 className="font-medium text-text-primary">Inhalt</h2>
+        </CardHeader>
+        <CardBody>
+          {email.inhalt_text ? (
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-text-primary">
+              {email.inhalt_text}
+            </pre>
+          ) : (
+            <p className="text-sm text-text-secondary">
+              Kein Volltext (Retention oder noch nicht synchronisiert).
+            </p>
+          )}
+        </CardBody>
+      </Card>
+    </div>
+  );
+}

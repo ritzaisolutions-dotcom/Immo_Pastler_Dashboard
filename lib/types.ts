@@ -4,6 +4,12 @@ export type TodoKategorie = "extern" | "mieter" | "intern";
 export type MieterStatus = "aktiv" | "ausgezogen" | "gekuendigt";
 export type InseratTyp = "WEG" | "Mietsverwaltung" | "Sondereigentum";
 
+export const INSERAT_TYPEN: InseratTyp[] = [
+  "WEG",
+  "Mietsverwaltung",
+  "Sondereigentum",
+];
+
 export interface Inserat {
   id: string;
   adresse: string;
@@ -14,7 +20,24 @@ export interface Inserat {
   eigentuemer_email: string | null;
   einheiten: number | null;
   notizen: string | null;
+  bild_url: string | null;
   created_at: string;
+}
+
+export interface Email {
+  id: string;
+  message_id: string;
+  von_email: string;
+  von_name: string | null;
+  betreff: string | null;
+  inhalt_text: string | null;
+  empfangen_at: string;
+  verarbeitet: boolean;
+  created_at: string;
+}
+
+export interface EmailWithTodo extends Email {
+  todo: Pick<Todo, "id" | "titel"> | null;
 }
 
 export interface Mieter {
@@ -30,11 +53,54 @@ export interface Mieter {
   created_at: string;
 }
 
+export type PartnerGewerk =
+  | "elektriker"
+  | "sanitaer"
+  | "schluessel"
+  | "reinigung"
+  | "hausmeister"
+  | "allgemein";
+
+export type PartnerNachrichtStatus = "entwurf" | "gesendet" | "abgelehnt";
+
+export interface Partner {
+  id: string;
+  firma: string;
+  ansprechpartner: string | null;
+  adresse: string | null;
+  plz: string | null;
+  stadt: string | null;
+  email: string;
+  telefon: string | null;
+  gewerk: PartnerGewerk;
+  notizen: string | null;
+  aktiv: boolean;
+  created_at: string;
+}
+
+export interface PartnerNachricht {
+  id: string;
+  todo_id: string;
+  partner_id: string;
+  betreff: string;
+  inhalt: string;
+  status: PartnerNachrichtStatus;
+  gesendet_at: string | null;
+  gesendet_von: string | null;
+  created_at: string;
+}
+
+export interface PartnerNachrichtWithPartner extends PartnerNachricht {
+  partner: Pick<Partner, "firma" | "email" | "ansprechpartner"> | null;
+}
+
 export interface Todo {
   id: string;
   email_id: string | null;
   mieter_id: string | null;
   inserat_id: string | null;
+  partner_id: string | null;
+  use_case: string | null;
   titel: string;
   beschreibung: string | null;
   kategorie: TodoKategorie | null;
@@ -46,11 +112,73 @@ export interface Todo {
 }
 
 export interface TodoWithMieter extends Todo {
-  mieter: Pick<Mieter, "name"> | null;
+  mieter: Pick<Mieter, "name" | "id"> | null;
+}
+
+export interface TodoWithInserat extends Todo {
+  inserat: Pick<Inserat, "adresse" | "stadt" | "id"> | null;
+}
+
+export interface TodoWithMieterInserat extends Todo {
+  mieter: Pick<Mieter, "name" | "id"> | null;
+  inserat: Pick<Inserat, "adresse" | "stadt" | "id"> | null;
+}
+
+export interface TodoWithNachricht extends TodoWithMieterInserat {
+  partner_nachricht: PartnerNachrichtWithPartner | null;
 }
 
 export interface MieterWithInserat extends Mieter {
   inserat: Pick<Inserat, "adresse" | "stadt"> | null;
+}
+
+export const PARTNER_GEWERKE: PartnerGewerk[] = [
+  "elektriker",
+  "sanitaer",
+  "schluessel",
+  "reinigung",
+  "hausmeister",
+  "allgemein",
+];
+
+export function isPartnerGewerk(value: string): value is PartnerGewerk {
+  return PARTNER_GEWERKE.includes(value as PartnerGewerk);
+}
+
+export function gewerkLabel(gewerk: PartnerGewerk): string {
+  switch (gewerk) {
+    case "elektriker":
+      return "Elektriker";
+    case "sanitaer":
+      return "Sanitär";
+    case "schluessel":
+      return "Schlüsseldienst";
+    case "reinigung":
+      return "Reinigung";
+    case "hausmeister":
+      return "Hausmeister";
+    case "allgemein":
+      return "Allgemein";
+    default: {
+      const _exhaustive: never = gewerk;
+      return _exhaustive;
+    }
+  }
+}
+
+export function nachrichtStatusLabel(status: PartnerNachrichtStatus): string {
+  switch (status) {
+    case "entwurf":
+      return "Entwurf";
+    case "gesendet":
+      return "Gesendet";
+    case "abgelehnt":
+      return "Abgelehnt";
+    default: {
+      const _exhaustive: never = status;
+      return _exhaustive;
+    }
+  }
 }
 
 export const TODO_STATUSES: TodoStatus[] = [
@@ -62,6 +190,20 @@ export const TODO_STATUSES: TodoStatus[] = [
 
 export const TODO_PRIORITAETEN: TodoPrioritaet[] = ["hoch", "mittel", "niedrig"];
 export const TODO_KATEGORIEN: TodoKategorie[] = ["extern", "mieter", "intern"];
+
+export const MIETER_STATUSES: MieterStatus[] = ["aktiv", "ausgezogen", "gekuendigt"];
+
+export function isInseratTyp(value: string): value is InseratTyp {
+  return INSERAT_TYPEN.includes(value as InseratTyp);
+}
+
+export function isMieterStatus(value: string): value is MieterStatus {
+  return MIETER_STATUSES.includes(value as MieterStatus);
+}
+
+export function inseratTypLabel(typ: InseratTyp | null): string {
+  return typ ?? "—";
+}
 
 export function isTodoStatus(value: string): value is TodoStatus {
   return TODO_STATUSES.includes(value as TodoStatus);

@@ -1,17 +1,47 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { createClient } from "@/utils/supabase/server";
+import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
+import InseratAvatar from "@/components/InseratAvatar";
+import InserateSearchInput from "@/components/InserateSearchInput";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
+import {
+  DataTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/DataTable";
+import { Building2 } from "lucide-react";
+import { type Inserat } from "@/lib/types";
 
-export default async function InseratePage() {
+interface InseratePageProps {
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function InseratePage({ searchParams }: InseratePageProps) {
+  const { q } = await searchParams;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const mitarbeiter = isMitarbeiter(user);
 
-  const { data: inserateList } = await supabase
+  let inserateQuery = supabase
     .from(TABLES.inserate)
     .select("*")
     .order("adresse", { ascending: true });
 
-  const inserate = inserateList ?? [];
+  if (q) {
+    inserateQuery = inserateQuery.or(`adresse.ilike.%${q}%,stadt.ilike.%${q}%`);
+  }
+
+  const { data: inserateList } = await inserateQuery;
+  const inserate = (inserateList ?? []) as Inserat[];
 
   const enriched = await Promise.all(
     inserate.map(async (inserat) => {
@@ -38,58 +68,84 @@ export default async function InseratePage() {
 
   return (
     <div>
-      <h1 className="mb-6 font-display text-3xl text-text-primary">Inserate</h1>
+      <PageHeader
+        title="Inserate"
+        actions={
+          mitarbeiter ? (
+            <Link
+              href="/inserate/neu"
+              className="inline-flex items-center justify-center rounded-[4px] bg-navy px-4 py-2 text-sm text-white transition-colors hover:bg-navy-mid"
+            >
+              Neues Inserat
+            </Link>
+          ) : undefined
+        }
+      />
+
+      <div className="mb-4">
+        <Suspense fallback={null}>
+          <InserateSearchInput />
+        </Suspense>
+      </div>
 
       {enriched.length === 0 ? (
-        <p className="text-sm text-text-secondary">Keine Inserate gefunden</p>
+        <EmptyState icon={Building2}>
+          {q ? `Keine Inserate für „${q}" gefunden` : "Keine Inserate gefunden"}
+        </EmptyState>
       ) : (
-        <div className="overflow-hidden border border-border bg-white rounded-[4px]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-warm-white text-left text-xs uppercase tracking-wider text-text-hint">
-                <th className="px-4 py-3">Adresse</th>
-                <th className="px-4 py-3">Typ</th>
-                <th className="px-4 py-3">Mieter</th>
-                <th className="px-4 py-3">Offene Todos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {enriched.map((inserat) => (
-                <tr
-                  key={inserat.id}
-                  className="border-b border-border last:border-0 hover:bg-warm-white/50"
-                >
-                  <td className="px-4 py-3">
+        <DataTable>
+          <TableHead>
+            <TableHeaderCell className="w-14">
+              <span className="sr-only">Bild</span>
+            </TableHeaderCell>
+            <TableHeaderCell>Adresse</TableHeaderCell>
+            <TableHeaderCell>Typ</TableHeaderCell>
+            <TableHeaderCell>Mieter</TableHeaderCell>
+            <TableHeaderCell>Offene Todos</TableHeaderCell>
+          </TableHead>
+          <TableBody>
+            {enriched.map((inserat) => (
+              <TableRow key={inserat.id}>
+                <TableCell>
+                  <InseratAvatar
+                    adresse={inserat.adresse}
+                    bildUrl={inserat.bild_url}
+                    href={`/inserate/${inserat.id}`}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Link
+                    href={`/inserate/${inserat.id}`}
+                    className="font-medium text-navy hover:text-gold"
+                  >
+                    {inserat.adresse}
+                    {inserat.stadt ? `, ${inserat.stadt}` : ""}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={{ type: "inseratTyp", value: inserat.typ }}
+                  />
+                </TableCell>
+                <TableCell className="text-text-secondary">
+                  {inserat.mieterCount}
+                </TableCell>
+                <TableCell>
+                  {inserat.openTodosCount > 0 ? (
                     <Link
-                      href={`/inserate/${inserat.id}`}
-                      className="font-medium text-navy hover:text-gold"
+                      href={`/todos?inserat_id=${inserat.id}`}
+                      className="inline-block rounded-[4px] bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning hover:opacity-90"
                     >
-                      {inserat.adresse}
-                      {inserat.stadt ? `, ${inserat.stadt}` : ""}
+                      {inserat.openTodosCount}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge
-                      variant={{ type: "inseratTyp", value: inserat.typ }}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {inserat.mieterCount}
-                  </td>
-                  <td className="px-4 py-3">
-                    {inserat.openTodosCount > 0 ? (
-                      <span className="inline-block bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning rounded-[4px]">
-                        {inserat.openTodosCount}
-                      </span>
-                    ) : (
-                      <span className="text-text-hint">0</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    <span className="text-text-hint">0</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </DataTable>
       )}
     </div>
   );

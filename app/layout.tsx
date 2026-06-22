@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +30,15 @@ export default function RootLayout({
       lang="de"
       className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: { fontFamily: "var(--font-inter)", fontSize: "14px" },
+          }}
+        />
+      </body>
     </html>
   );
 }

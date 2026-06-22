@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import { isTodoStatus } from "@/lib/types";
 
@@ -16,6 +17,10 @@ export async function PATCH(
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!isMitarbeiter(user)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body: unknown = await request.json();
@@ -55,7 +60,7 @@ export async function PATCH(
     .eq("id", id);
 
   if (updateError) {
-    return NextResponse.json({ error: "Update failed" }, { status: 400 });
+    return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

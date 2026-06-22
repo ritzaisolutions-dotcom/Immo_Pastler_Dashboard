@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
 
 export default function MieterSearch({ initialQuery }: { initialQuery: string }) {
   const router = useRouter();
@@ -18,19 +20,14 @@ export default function MieterSearch({ initialQuery }: { initialQuery: string })
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
-      <input
+      <Input
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Nach Name suchen…"
-        className="w-full max-w-sm border border-border bg-white px-3 py-2 text-sm rounded-[4px]"
+        className="max-w-sm"
       />
-      <button
-        type="submit"
-        className="bg-navy px-4 py-2 text-sm text-white rounded-[4px] hover:bg-navy-mid"
-      >
-        Suchen
-      </button>
+      <Button type="submit">Suchen</Button>
     </form>
   );
 }

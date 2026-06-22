@@ -28,6 +28,8 @@ Use the same staff login as the Haller dashboard.
 
 ## Pre-Release Scan
 
+Siehe auch [`docs/AUDIT_ARBEITSPLAN.md`](./docs/AUDIT_ARBEITSPLAN.md) für den schrittweisen Security- und DSGVO-Arbeitsplan.
+
 ```bash
 git grep -i "eyJ\|service_role\|sk_live" -- "*.ts" "*.tsx" "*.js" "*.json"
 grep -rn "console.log" app/

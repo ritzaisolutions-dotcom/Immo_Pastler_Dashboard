@@ -1,42 +1,54 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import PastlerLogo from "@/components/PastlerLogo";
+import { usePathname } from "next/navigation";
+import {
+  Building2,
+  CheckSquare,
+  Handshake,
+  LayoutDashboard,
+  Mail,
+  Shield,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/cn";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/todos", label: "Todos" },
-  { href: "/mieter", label: "Mieter" },
-  { href: "/inserate", label: "Inserate" },
+const baseNavItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/todos", label: "Todos", icon: CheckSquare },
+  { href: "/mieter", label: "Mieter", icon: Users },
+  { href: "/inserate", label: "Inserate", icon: Building2 },
+  { href: "/datenschutz", label: "Datenschutz", icon: Shield },
 ];
 
-export default function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
+const mitarbeiterNavItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/partner", label: "Partner", icon: Handshake },
+  { href: "/emails", label: "E-Mails", icon: Mail },
+];
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
+interface SidebarProps {
+  showMitarbeiterNav?: boolean;
+}
+
+export default function Sidebar({ showMitarbeiterNav = false }: SidebarProps) {
+  const pathname = usePathname();
+
+  const navItems = showMitarbeiterNav
+    ? [
+        ...baseNavItems.slice(0, 4),
+        ...mitarbeiterNavItems,
+        ...baseNavItems.slice(4),
+      ]
+    : baseNavItems;
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-10 flex w-[240px] flex-col bg-navy">
+    <aside className="fixed inset-y-0 left-0 z-20 hidden w-[var(--sidebar-width)] flex-col bg-navy shadow-sidebar md:flex">
       <div className="border-b border-white/10 px-6 py-6">
-        <Image
-          src="/JPlogo-png.avif"
-          alt="Pastler Immobilienverwaltung"
-          width={160}
-          height={48}
-          className="h-auto w-full max-w-[160px]"
-          priority
-        />
-        <p className="mt-3 font-display text-sm tracking-[3px] text-white">
-          PASTLER<span className="text-gold">.</span>
-        </p>
+        <Link href="/dashboard" className="block">
+          <PastlerLogo variant="dark" className="items-start" />
+        </Link>
       </div>
 
       <nav className="flex-1 px-3 py-4">
@@ -45,17 +57,20 @@ export default function Sidebar() {
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            const Icon = item.icon;
 
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`block border-l-2 px-4 py-2.5 text-[13px] transition-colors ${
+                  className={cn(
+                    "flex items-center gap-3 border-l-2 px-4 py-2.5 text-[13px] transition-colors",
                     isActive
-                      ? "border-gold text-gold"
-                      : "border-transparent text-white/65 hover:text-white"
-                  }`}
+                      ? "border-gold bg-navy-mid/50 text-gold"
+                      : "border-transparent text-white/65 hover:bg-navy-mid/30 hover:text-white",
+                  )}
                 >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                   {item.label}
                 </Link>
               </li>
@@ -63,16 +78,6 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
-
-      <div className="border-t border-white/10 p-4">
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full border border-white/20 px-4 py-2 text-[13px] text-white/70 transition-colors hover:border-white/40 hover:text-white rounded-[4px]"
-        >
-          Abmelden
-        </button>
-      </div>
     </aside>
   );
 }

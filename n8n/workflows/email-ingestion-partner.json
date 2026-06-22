@@ -1,0 +1,589 @@
+{
+  "name": "Pastler Email Ingestion + Partner Draft",
+  "nodes": [
+    {
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "read",
+        "options": {
+          "customEmailConfig": "",
+          "forceReconnect": 300
+        }
+      },
+      "id": "c1d2e3f4-0001-4000-8000-000000000001",
+      "name": "IMAP Trigger",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "credentials": {
+        "imap": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Pastler IMAP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pastler_emails",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "message_id",
+              "keyValue": "={{ $json.messageId }}"
+            }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0002-4000-8000-000000000002",
+      "name": "Duplicate Check",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "dup-check",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c1d2e3f4-0003-4000-8000-000000000003",
+      "name": "IF New Email",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "pastler_emails",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "message_id", "fieldValue": "={{ $('IMAP Trigger').item.json.messageId }}" },
+            { "fieldId": "von_email", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].address }}" },
+            { "fieldId": "von_name", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].name }}" },
+            { "fieldId": "betreff", "fieldValue": "={{ $('IMAP Trigger').item.json.subject }}" },
+            { "fieldId": "inhalt_text", "fieldValue": "={{ $('IMAP Trigger').item.json.textPlain || $('IMAP Trigger').item.json.textHtml }}" },
+            { "fieldId": "empfangen_at", "fieldValue": "={{ $('IMAP Trigger').item.json.date }}" }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0004-4000-8000-000000000004",
+      "name": "Raw Email",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [660, 200],
+      "continueOnFail": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pastler_mieter",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $('Raw Email').item.json.von_email }}"
+            }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0005-4000-8000-000000000005",
+      "name": "Mieter-Lookup",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [880, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Du bist Assistent einer deutschen Hausverwaltung. Analysiere diese E-Mail.\n\nVon: {{ $('Raw Email').item.json.von_email }}\nBetreff: {{ $('Raw Email').item.json.betreff }}\nInhalt: {{ $('Raw Email').item.json.inhalt_text }}\n\nAntworte NUR mit validem JSON, kein Markdown, keine Erklärung:\n{\n  \"titel\": \"Kurztitel max. 80 Zeichen\",\n  \"beschreibung\": \"Was ist zu tun\",\n  \"kategorie\": \"extern\",\n  \"prioritaet\": \"mittel\",\n  \"faellig_at\": null,\n  \"use_case\": \"defekte_beleuchtung\",\n  \"gewerk\": \"elektriker\",\n  \"partner_noetig\": true\n}\n\nRegeln:\n- kategorie: extern | mieter | intern\n- prioritaet: hoch | mittel | niedrig\n- faellig_at: YYYY-MM-DD oder null\n- use_case: maschinenlesbar snake_case (z.B. defekte_beleuchtung, wasserschaden, schluesselverlust)\n- gewerk: elektriker | sanitaer | schluessel | reinigung | hausmeister | allgemein | null\n- partner_noetig: true nur wenn externer Handwerker nötig (Glühbirne, Wasser, Schloss, Reinigung …); sonst false\n- gewerk muss zu partner_noetig passen; bei partner_noetig false gewerk null setzen"
+      },
+      "id": "c1d2e3f4-0006-4000-8000-000000000006",
+      "name": "LLM Todo Extract",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1100, 200],
+      "continueOnFail": true,
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Mistral API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nconst llmFailed = !!$input.first().json.error;\nlet todo;\nlet llm_fallback = llmFailed || !raw.trim();\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  if (!m) llm_fallback = true;\n  todo = JSON.parse(m ? m[0] : raw);\n} catch {\n  todo = {};\n  llm_fallback = true;\n}\nconst defaults = {\n  titel: 'Unbekanntes Anliegen',\n  beschreibung: raw.slice(0, 200),\n  kategorie: 'intern',\n  prioritaet: 'mittel',\n  faellig_at: null,\n  use_case: null,\n  gewerk: null,\n  partner_noetig: false,\n};\ntodo = { ...defaults, ...todo };\nif (typeof todo.partner_noetig !== 'boolean') {\n  todo.partner_noetig = todo.kategorie === 'extern' && !!todo.gewerk;\n}\nconst validGewerke = ['elektriker', 'sanitaer', 'schluessel', 'reinigung', 'hausmeister', 'allgemein'];\nif (todo.gewerk && !validGewerke.includes(todo.gewerk)) {\n  todo.gewerk = null;\n}\nconst mieter = $('Mieter-Lookup').all()?.[0]?.json ?? null;\nconst email = $('Raw Email').item.json;\nreturn [{\n  json: {\n    ...todo,\n    llm_fallback,\n    email_id: email.id,\n    mieter_id: mieter?.id ?? null,\n    inserat_id: mieter?.inserat_id ?? null,\n  },\n}];"
+      },
+      "id": "c1d2e3f4-0007-4000-8000-000000000007",
+      "name": "Parse Todo JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "pastler_todos",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "titel", "fieldValue": "={{ $json.titel }}" },
+            { "fieldId": "beschreibung", "fieldValue": "={{ $json.beschreibung }}" },
+            { "fieldId": "kategorie", "fieldValue": "={{ $json.kategorie }}" },
+            { "fieldId": "prioritaet", "fieldValue": "={{ $json.prioritaet }}" },
+            { "fieldId": "faellig_at", "fieldValue": "={{ $json.faellig_at }}" },
+            { "fieldId": "email_id", "fieldValue": "={{ $json.email_id }}" },
+            { "fieldId": "mieter_id", "fieldValue": "={{ $json.mieter_id }}" },
+            { "fieldId": "inserat_id", "fieldValue": "={{ $json.inserat_id }}" },
+            { "fieldId": "use_case", "fieldValue": "={{ $json.use_case }}" },
+            { "fieldId": "gewerk", "fieldValue": "={{ $json.gewerk }}" }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0008-4000-8000-000000000008",
+      "name": "Insert Todo",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1540, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "pastler_emails",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Raw Email').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "verarbeitet", "fieldValue": "true" }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0009-4000-8000-000000000009",
+      "name": "Mark Email Processed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1760, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "partner-needed",
+              "leftValue": "={{ $('Parse Todo JSON').item.json.partner_noetig }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            },
+            {
+              "id": "gewerk-set",
+              "leftValue": "={{ $('Parse Todo JSON').item.json.gewerk }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c1d2e3f4-0010-4000-8000-000000000010",
+      "name": "IF Partner Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1980, 200]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "pastler_partner",
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "gewerk",
+              "keyValue": "={{ $('Parse Todo JSON').item.json.gewerk }}"
+            },
+            {
+              "keyName": "aktiv",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0011-4000-8000-000000000011",
+      "name": "Partner Lookup",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [2200, 100],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "partner-found",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "larger"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c1d2e3f4-0012-4000-8000-000000000012",
+      "name": "IF Partner Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2420, 100]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Du schreibst im Namen der Hausverwaltung Pastler (formell, Deutsch) eine E-Mail an einen Handwerker-Partner.\n\nAnliegen-Titel: {{ $('Parse Todo JSON').item.json.titel }}\nBeschreibung: {{ $('Parse Todo JSON').item.json.beschreibung }}\nUse-Case: {{ $('Parse Todo JSON').item.json.use_case }}\nPartner-Firma: {{ $('Partner Lookup').item.json.firma }}\nAnsprechpartner: {{ $('Partner Lookup').item.json.ansprechpartner }}\n\nAntworte NUR mit validem JSON:\n{\n  \"betreff\": \"Kurzer Betreff max. 120 Zeichen\",\n  \"inhalt\": \"Formeller E-Mail-Text mit Grußformel, ohne Markdown\"\n}\n\nEnthalte: kurze Problemstellung, Bitte um Rückmeldung/Termin, Signatur \"Immobilienverwaltung Pastler\"."
+      },
+      "id": "c1d2e3f4-0013-4000-8000-000000000013",
+      "name": "LLM Partner Draft",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [2640, 0],
+      "continueOnFail": true,
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Mistral API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '';\nlet draft;\ntry {\n  const m = raw.match(/\\{[\\s\\S]*\\}/);\n  draft = JSON.parse(m ? m[0] : raw);\n} catch {\n  draft = {\n    betreff: $('Parse Todo JSON').item.json.titel,\n    inhalt: raw.slice(0, 2000),\n  };\n}\nconst todo = $('Insert Todo').item.json;\nconst partner = $('Partner Lookup').item.json;\nreturn [{\n  json: {\n    todo_id: todo.id,\n    partner_id: partner.id,\n    betreff: draft.betreff || todo.titel,\n    inhalt: draft.inhalt || '',\n    status: 'entwurf',\n  },\n}];"
+      },
+      "id": "c1d2e3f4-0014-4000-8000-000000000014",
+      "name": "Parse Partner Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 0]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "pastler_partner_nachrichten",
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "todo_id", "fieldValue": "={{ $json.todo_id }}" },
+            { "fieldId": "partner_id", "fieldValue": "={{ $json.partner_id }}" },
+            { "fieldId": "betreff", "fieldValue": "={{ $json.betreff }}" },
+            { "fieldId": "inhalt", "fieldValue": "={{ $json.inhalt }}" },
+            { "fieldId": "status", "fieldValue": "={{ $json.status }}" }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0015-4000-8000-000000000015",
+      "name": "Insert Partner Nachricht",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3080, 0],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "pastler_todos",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Insert Todo').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            { "fieldId": "partner_id", "fieldValue": "={{ $('Partner Lookup').item.json.id }}" },
+            { "fieldId": "use_case", "fieldValue": "={{ $('Parse Todo JSON').item.json.use_case }}" }
+          ]
+        }
+      },
+      "id": "c1d2e3f4-0016-4000-8000-000000000016",
+      "name": "Update Todo Partner",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [3300, 0],
+      "credentials": {
+        "supabaseApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Supabase Service Role (Pastler)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c1d2e3f4-0017-4000-8000-000000000017",
+      "name": "Stop Duplicate",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [660, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "prio-hoch",
+              "leftValue": "={{ $('Parse Todo JSON').item.json.prioritaet }}",
+              "rightValue": "hoch",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "llm-fallback",
+              "leftValue": "={{ $('Parse Todo JSON').item.json.llm_fallback }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "c1d2e3f4-0018-4000-8000-000000000018",
+      "name": "IF Alert",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1760, 380]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "CONFIGURE_TELEGRAM_CHAT_ID",
+        "text": "=Pastler — neues Todo\n\nTitel: {{ $('Parse Todo JSON').item.json.titel }}\nPriorität: {{ $('Parse Todo JSON').item.json.prioritaet }}\nKategorie: {{ $('Parse Todo JSON').item.json.kategorie }}\nTodo-ID: {{ $('Insert Todo').item.json.id }}{{ $('Parse Todo JSON').item.json.llm_fallback ? '\\n\\n⚠️ Mistral-Fallback — bitte manuell prüfen' : '' }}",
+        "additionalFields": {}
+      },
+      "id": "c1d2e3f4-0019-4000-8000-000000000019",
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "CONFIGURE_IN_N8N",
+          "name": "Pastler Telegram Bot"
+        }
+      },
+      "notes": "DSGVO: kein inhalt_text, keine beschreibung, kein E-Mail-Volltext."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "email-saved",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "c1d2e3f4-0020-4000-8000-000000000020",
+      "name": "IF Email Saved",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [770, 200],
+      "notes": "Stoppt vor LLM bei Duplikat-Race (UNIQUE message_id) oder Insert-Fehler."
+    }
+  ],
+  "connections": {
+    "IMAP Trigger": {
+      "main": [[{ "node": "Duplicate Check", "type": "main", "index": 0 }]]
+    },
+    "Duplicate Check": {
+      "main": [[{ "node": "IF New Email", "type": "main", "index": 0 }]]
+    },
+    "IF New Email": {
+      "main": [
+        [{ "node": "Raw Email", "type": "main", "index": 0 }],
+        [{ "node": "Stop Duplicate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Raw Email": {
+      "main": [[{ "node": "IF Email Saved", "type": "main", "index": 0 }]]
+    },
+    "IF Email Saved": {
+      "main": [
+        [{ "node": "Mieter-Lookup", "type": "main", "index": 0 }],
+        [{ "node": "Stop Duplicate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mieter-Lookup": {
+      "main": [[{ "node": "LLM Todo Extract", "type": "main", "index": 0 }]]
+    },
+    "LLM Todo Extract": {
+      "main": [[{ "node": "Parse Todo JSON", "type": "main", "index": 0 }]]
+    },
+    "Parse Todo JSON": {
+      "main": [[{ "node": "Insert Todo", "type": "main", "index": 0 }]]
+    },
+    "Insert Todo": {
+      "main": [
+        [
+          { "node": "Mark Email Processed", "type": "main", "index": 0 },
+          { "node": "IF Alert", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "IF Alert": {
+      "main": [
+        [{ "node": "Telegram Alert", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Mark Email Processed": {
+      "main": [[{ "node": "IF Partner Needed", "type": "main", "index": 0 }]]
+    },
+    "IF Partner Needed": {
+      "main": [
+        [{ "node": "Partner Lookup", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Partner Lookup": {
+      "main": [[{ "node": "IF Partner Found", "type": "main", "index": 0 }]]
+    },
+    "IF Partner Found": {
+      "main": [
+        [{ "node": "LLM Partner Draft", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "LLM Partner Draft": {
+      "main": [[{ "node": "Parse Partner Draft", "type": "main", "index": 0 }]]
+    },
+    "Parse Partner Draft": {
+      "main": [[{ "node": "Insert Partner Nachricht", "type": "main", "index": 0 }]]
+    },
+    "Insert Partner Nachricht": {
+      "main": [[{ "node": "Update Todo Partner", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "pastler",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "updatedAt": "2026-06-20T00:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

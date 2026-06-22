@@ -26,6 +26,10 @@ Migrations:
 1. [`002_pastler_schema.sql`](./migrations/002_pastler_schema.sql)
 2. [`003_pastler_rls_claude.sql`](./migrations/003_pastler_rls_claude.sql)
 3. [`004_drop_staff_true_policies.sql`](./migrations/004_drop_staff_true_policies.sql)
+4. [`005_retention_policies.sql`](./migrations/005_retention_policies.sql) — Retention-Kommentare; Cron-SQL in [`n8n/README.md`](../n8n/README.md)
+5. [`006_eigentuemer_select_only.sql`](./migrations/006_eigentuemer_select_only.sql) — Eigentümer read-only (SELECT)
+
+Security/DSGVO: [`docs/SECURITY_DSGVO_AUDIT.md`](../docs/SECURITY_DSGVO_AUDIT.md)
 
 ## 2. Auth
 

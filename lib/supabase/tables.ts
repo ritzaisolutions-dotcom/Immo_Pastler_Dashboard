@@ -3,4 +3,6 @@ export const TABLES = {
   mieter: "pastler_mieter",
   todos: "pastler_todos",
   emails: "pastler_emails",
+  partner: "pastler_partner",
+  partnerNachrichten: "pastler_partner_nachrichten",
 } as const;

@@ -14,31 +14,32 @@ type BadgeVariant =
   | { type: "prioritaet"; value: TodoPrioritaet }
   | { type: "kategorie"; value: TodoKategorie | null }
   | { type: "mieterStatus"; value: MieterStatus }
-  | { type: "inseratTyp"; value: InseratTyp | null };
+  | { type: "inseratTyp"; value: InseratTyp | null }
+  | { type: "partnerAktiv"; value: boolean };
 
 const statusStyles: Record<TodoStatus, string> = {
   offen: "bg-warm-white text-text-secondary border-border",
-  in_bearbeitung: "bg-[#EFF6FF] text-info border-[#BFDBFE]",
-  erledigt: "bg-[#ECFDF5] text-success border-[#A7F3D0]",
-  abgelehnt: "bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]",
+  in_bearbeitung: "bg-info/10 text-info border-info/30",
+  erledigt: "bg-success/10 text-success border-success/30",
+  abgelehnt: "bg-burgundy/10 text-burgundy border-burgundy/30",
 };
 
 const prioritaetStyles: Record<TodoPrioritaet, string> = {
-  hoch: "bg-[#FEF2F2] text-warning",
-  mittel: "bg-[#FFFBEB] text-[#78350F]",
+  hoch: "bg-burgundy/10 text-warning",
+  mittel: "bg-gold-pale text-warning",
   niedrig: "bg-warm-white text-text-secondary",
 };
 
 const kategorieStyles: Record<TodoKategorie, string> = {
-  extern: "bg-[#EFF6FF] text-info",
-  mieter: "bg-[#F0FDF4] text-[#166534]",
+  extern: "bg-info/10 text-info",
+  mieter: "bg-success/10 text-success",
   intern: "bg-warm-white text-text-secondary",
 };
 
 const mieterStatusStyles: Record<MieterStatus, string> = {
-  aktiv: "bg-[#ECFDF5] text-success",
+  aktiv: "bg-success/10 text-success",
   ausgezogen: "bg-warm-white text-text-secondary",
-  gekuendigt: "bg-[#FEF2F2] text-[#991B1B]",
+  gekuendigt: "bg-burgundy/10 text-burgundy",
 };
 
 function badgeLabel(variant: BadgeVariant): string {
@@ -57,6 +58,8 @@ function badgeLabel(variant: BadgeVariant): string {
           : "Gekündigt";
     case "inseratTyp":
       return variant.value ?? "—";
+    case "partnerAktiv":
+      return variant.value ? "Aktiv" : "Inaktiv";
     default: {
       const _exhaustive: never = variant;
       return _exhaustive;
@@ -78,6 +81,8 @@ function badgeStyles(variant: BadgeVariant): string {
       return mieterStatusStyles[variant.value];
     case "inseratTyp":
       return "bg-warm-white text-text-secondary";
+    case "partnerAktiv":
+      return variant.value ? "bg-success/10 text-success" : "bg-warm-white text-text-hint";
     default: {
       const _exhaustive: never = variant;
       return _exhaustive;
@@ -90,7 +95,7 @@ export default function Badge({ variant }: { variant: BadgeVariant }) {
 
   return (
     <span
-      className={`inline-block px-2 py-0.5 text-[11px] font-medium rounded-[4px] ${withBorder ? "border" : ""} ${badgeStyles(variant)}`}
+      className={`inline-block rounded-[4px] px-2 py-0.5 text-[11px] font-medium ${withBorder ? "border" : ""} ${badgeStyles(variant)}`}
     >
       {badgeLabel(variant)}
     </span>

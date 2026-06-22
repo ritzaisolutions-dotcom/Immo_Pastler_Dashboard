@@ -19,3 +19,9 @@ INSERT INTO pastler_todos (id, mieter_id, inserat_id, titel, beschreibung, kateg
   ('33333333-3333-3333-3333-333333333304', '22222222-2222-2222-2222-222222222203', '11111111-1111-1111-1111-111111111102', 'Wasserschaden prüfen', 'Feuchtigkeit an der Decke im Bad', 'mieter', 'hoch', 'offen', CURRENT_DATE + 1),
   ('33333333-3333-3333-3333-333333333305', NULL, '11111111-1111-1111-1111-111111111101', 'Versicherung kontaktieren', 'Gebäudeversicherung über Dachschaden informieren', 'extern', 'niedrig', 'erledigt', NULL)
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO pastler_partner (id, firma, ansprechpartner, adresse, plz, stadt, email, telefon, gewerk, notizen) VALUES
+  ('44444444-4444-4444-4444-444444444401', 'Elektro Rhein GmbH', 'Klaus Meier', 'Industriestr. 8', '56070', 'Koblenz', 'auftrag@elektro-rhein.example.com', '+49 261 987654', 'elektriker', '24h Notdienst'),
+  ('44444444-4444-4444-4444-444444444402', 'Schlüssel Express Koblenz', 'Maria Keller', 'Bahnhofstr. 22', '56068', 'Koblenz', 'service@schluessel-express.example.com', '+49 261 555123', 'schluessel', NULL),
+  ('44444444-4444-4444-4444-444444444403', 'Sauber & Co.', 'Peter Hahn', 'Gartenweg 3', '56073', 'Koblenz', 'info@sauber-co.example.com', '+49 261 444333', 'reinigung', 'Treppenhaus-Reinigung')
+ON CONFLICT (id) DO NOTHING;

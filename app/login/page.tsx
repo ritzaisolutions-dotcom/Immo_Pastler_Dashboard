@@ -2,16 +2,24 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import PastlerLogo from "@/components/PastlerLogo";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { Card, CardBody } from "@/components/ui/Card";
 import { createClient } from "@/utils/supabase/client";
+
+type Mode = "login" | "reset";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleLogin(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -23,7 +31,13 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError("Ungültige Anmeldedaten");
+      if (authError.message.includes("Invalid login")) {
+        setError("E-Mail oder Passwort ist falsch");
+      } else if (authError.message.includes("Email not confirmed")) {
+        setError("Bitte bestätige zuerst deine E-Mail-Adresse");
+      } else {
+        setError("Anmeldung fehlgeschlagen. Bitte erneut versuchen.");
+      }
       setLoading(false);
       return;
     }
@@ -32,68 +46,138 @@ export default function LoginPage() {
     router.refresh();
   }
 
+  async function handleReset(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const supabase = createClient();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+
+    setLoading(false);
+
+    if (resetError) {
+      setError("Zurücksetzen fehlgeschlagen. Bitte erneut versuchen.");
+      return;
+    }
+
+    setInfo("E-Mail gesendet — prüfe deinen Posteingang");
+  }
+
   return (
-    <div className="flex min-h-full flex-1 items-center justify-center bg-navy-deep px-4">
-      <div className="w-full max-w-md border border-white/10 bg-navy p-8 rounded-[4px]">
-        <div className="mb-8 text-center">
-          <h1 className="font-display text-2xl tracking-[3px] text-white">
-            PASTLER<span className="text-gold">.</span>
-          </h1>
-          <p className="mt-2 text-sm text-white/60">Internes Dashboard</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-[10px] uppercase tracking-wider text-white/40"
-            >
-              E-Mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="w-full border border-white/12 bg-white/7 px-3 py-2 text-sm text-white rounded-[4px] outline-none focus:border-gold"
-            />
+    <div className="relative flex min-h-full flex-1 items-center justify-center bg-login-hero px-4">
+      <div className="pointer-events-none absolute inset-0 bg-login-pattern" />
+      <Card className="relative z-10 w-full max-w-md border-white/10 bg-navy shadow-card">
+        <CardBody className="p-8">
+          <div className="mb-8 text-center">
+            <PastlerLogo variant="dark" showWordmark className="mx-auto" />
+            <p className="mt-4 text-sm text-white/60">Internes Dashboard</p>
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1 block text-[10px] uppercase tracking-wider text-white/40"
-            >
-              Passwort
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full border border-white/12 bg-white/7 px-3 py-2 text-sm text-white rounded-[4px] outline-none focus:border-gold"
-            />
-          </div>
+          {mode === "login" ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                label="E-Mail"
+                id="email"
+                type="email"
+                variant="dark"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
 
-          {error && (
-            <p className="text-sm text-red-300" role="alert">
-              {error}
-            </p>
+              <div>
+                <Input
+                  label="Passwort"
+                  id="password"
+                  type="password"
+                  variant="dark"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setMode("reset");
+                  }}
+                  className="mt-1.5 text-xs text-white/40 transition-colors hover:text-white/70"
+                >
+                  Passwort vergessen?
+                </button>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-300" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                variant="gold"
+                disabled={loading}
+                className="w-full py-2.5"
+              >
+                {loading ? "Anmelden…" : "Anmelden"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleReset} className="space-y-4">
+              <p className="text-sm text-white/60">
+                Gib deine E-Mail-Adresse ein, um einen Reset-Link anzufordern.
+              </p>
+              <Input
+                label="E-Mail"
+                id="reset-email"
+                type="email"
+                variant="dark"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+
+              {error && (
+                <p className="text-sm text-red-300" role="alert">
+                  {error}
+                </p>
+              )}
+              {info && (
+                <p className="text-sm text-green-300" role="status">
+                  {info}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                variant="gold"
+                disabled={loading || Boolean(info)}
+                className="w-full py-2.5"
+              >
+                {loading ? "Senden…" : "Reset-Link senden"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setInfo(null);
+                  setMode("login");
+                }}
+                className="w-full text-center text-xs text-white/40 transition-colors hover:text-white/70"
+              >
+                Zurück zur Anmeldung
+              </button>
+            </form>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gold py-2.5 text-sm font-medium text-navy rounded-[2px] transition-colors hover:bg-gold-light disabled:opacity-60"
-          >
-            {loading ? "Anmelden…" : "Anmelden"}
-          </button>
-        </form>
-      </div>
+        </CardBody>
+      </Card>
     </div>
   );
 }

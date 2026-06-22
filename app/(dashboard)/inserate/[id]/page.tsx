@@ -1,13 +1,28 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
-import TodoCard from "@/components/TodoCard";
+import ProfileHeader from "@/components/ProfileHeader";
+import TodoKategorieBoard from "@/components/TodoKategorieBoard";
+import EmptyState from "@/components/ui/EmptyState";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import {
-  TODO_KATEGORIEN,
-  kategorieLabel,
-  type Todo,
+  DataTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui/DataTable";
+import {
+  inseratTypLabel,
+  type Inserat,
   type Mieter,
+  type Todo,
+  type TodoWithNachricht,
+  type PartnerNachrichtWithPartner,
 } from "@/lib/types";
 
 interface InseratDetailPageProps {
@@ -19,12 +34,22 @@ export default async function InseratDetailPage({
 }: InseratDetailPageProps) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const mitarbeiter = isMitarbeiter(user);
 
-  const { data: inserat } = await supabase
+  const { data: inseratData } = await supabase
     .from(TABLES.inserate)
     .select("*")
     .eq("id", id)
     .maybeSingle();
+
+  if (!inseratData) {
+    notFound();
+  }
+
+  const inserat = inseratData as Inserat;
 
   const [{ data: mieterList }, { data: todosList }] = await Promise.all([
     supabase
@@ -40,124 +65,161 @@ export default async function InseratDetailPage({
   ]);
 
   const mieter = (mieterList ?? []) as Mieter[];
-  const todos = (todosList ?? []) as Todo[];
+  let todos = (todosList ?? []) as Todo[];
 
-  const todosByKategorie = TODO_KATEGORIEN.map((kategorie) => ({
-    kategorie,
-    items: todos.filter((t) => t.kategorie === kategorie),
-  }));
+  if (mitarbeiter && todos.length > 0) {
+    const todoIds = todos.map((t) => t.id);
+    const { data: nachrichten } = await supabase
+      .from(TABLES.partnerNachrichten)
+      .select(
+        `*, partner:${TABLES.partner}(firma, email, ansprechpartner)`,
+      )
+      .in("todo_id", todoIds)
+      .order("created_at", { ascending: false });
+
+    const byTodo = new Map<string, PartnerNachrichtWithPartner>();
+    for (const n of nachrichten ?? []) {
+      if (!byTodo.has(n.todo_id)) {
+        byTodo.set(n.todo_id, n as PartnerNachrichtWithPartner);
+      }
+    }
+
+    todos = todos.map((todo) => ({
+      ...todo,
+      partner_nachricht: byTodo.get(todo.id) ?? null,
+    })) as TodoWithNachricht[];
+  }
+
+  const subtitle = [
+    inserat.stadt,
+    inserat.typ ? inseratTypLabel(inserat.typ) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div>
-      <div className="mb-6">
-        <Link
-          href="/inserate"
-          className="text-sm text-text-secondary hover:text-navy"
-        >
+      <p className="mb-4">
+        <Link href="/inserate" className="text-sm text-text-secondary hover:text-navy">
           ← Zurück zu Inserate
         </Link>
-        <h1 className="mt-2 font-display text-3xl text-text-primary">
-          {inserat
-            ? `${inserat.adresse}${inserat.stadt ? `, ${inserat.stadt}` : ""}`
-            : "Inserat"}
-        </h1>
-      </div>
+      </p>
 
-      {!inserat ? (
-        <p className="text-sm text-text-secondary">
-          Keine Daten für dieses Inserat verfügbar.
-        </p>
-      ) : (
-        <>
-      <section className="mb-8 border border-border bg-white p-6 rounded-[4px]">
-        <h2 className="mb-4 font-display text-xl text-text-primary">
-          Eigentümer
-        </h2>
-        <dl className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-text-hint">Name</dt>
-            <dd className="text-text-primary">
-              {inserat.eigentuemer_name ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-text-hint">E-Mail</dt>
-            <dd className="text-text-primary">
-              {inserat.eigentuemer_email ?? "—"}
-            </dd>
-          </div>
-        </dl>
-      </section>
+      <ProfileHeader
+        adresse={inserat.adresse}
+        subtitle={subtitle || null}
+        bildUrl={inserat.bild_url}
+        editHref={mitarbeiter ? `/inserate/${id}/bearbeiten` : undefined}
+      />
+
+      <Card className="mb-8">
+        <CardHeader>
+          <h2 className="font-display text-xl text-text-primary">Stammdaten</h2>
+        </CardHeader>
+        <CardBody>
+          <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-text-hint">PLZ / Stadt</dt>
+              <dd className="text-text-primary">
+                {[inserat.plz, inserat.stadt].filter(Boolean).join(" ") || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-hint">Typ</dt>
+              <dd>
+                <Badge variant={{ type: "inseratTyp", value: inserat.typ }} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-hint">Einheiten</dt>
+              <dd className="text-text-primary">{inserat.einheiten ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-text-hint">Eigentümer</dt>
+              <dd className="text-text-primary">
+                {inserat.eigentuemer_name ?? "—"}
+                {inserat.eigentuemer_email && (
+                  <span className="block text-text-secondary">
+                    {inserat.eigentuemer_email}
+                  </span>
+                )}
+              </dd>
+            </div>
+            {inserat.notizen && (
+              <div className="sm:col-span-2">
+                <dt className="text-text-hint">Notizen</dt>
+                <dd className="whitespace-pre-wrap text-text-primary">
+                  {inserat.notizen}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </CardBody>
+      </Card>
 
       <section className="mb-8">
-        <h2 className="mb-4 font-display text-xl text-text-primary">Mieter</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-xl text-text-primary">Mieter</h2>
+          {mitarbeiter && (
+            <Link
+              href={`/mieter/neu?inserat_id=${id}`}
+              className="text-sm text-navy hover:text-gold"
+            >
+              + Mieter anlegen
+            </Link>
+          )}
+        </div>
         {mieter.length === 0 ? (
-          <p className="text-sm text-text-secondary">Keine Mieter</p>
+          <EmptyState>Keine Mieter</EmptyState>
         ) : (
-          <div className="overflow-hidden border border-border bg-white rounded-[4px]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-warm-white text-left text-xs uppercase tracking-wider text-text-hint">
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">E-Mail</th>
-                  <th className="px-4 py-3">Einheit</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mieter.map((m) => (
-                  <tr
-                    key={m.id}
-                    className="border-b border-border last:border-0"
-                  >
-                    <td className="px-4 py-3 font-medium">{m.name}</td>
-                    <td className="px-4 py-3 text-text-secondary">
-                      {m.email ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-text-secondary">
-                      {m.einheit_nr ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge
-                        variant={{ type: "mieterStatus", value: m.status }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable>
+            <TableHead>
+              <TableHeaderCell>Name</TableHeaderCell>
+              <TableHeaderCell>E-Mail</TableHeaderCell>
+              <TableHeaderCell>Einheit</TableHeaderCell>
+              <TableHeaderCell>Status</TableHeaderCell>
+            </TableHead>
+            <TableBody>
+              {mieter.map((m) => (
+                <TableRow key={m.id}>
+                  <TableCell>
+                    <Link
+                      href={`/mieter/${m.id}`}
+                      className="font-medium text-navy hover:text-gold"
+                    >
+                      {m.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.einheit_nr ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={{ type: "mieterStatus", value: m.status }} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </DataTable>
         )}
       </section>
 
       <section>
-        <h2 className="mb-4 font-display text-xl text-text-primary">
-          Statusboard
-        </h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {todosByKategorie.map(({ kategorie, items }) => (
-            <div
-              key={kategorie}
-              className="border border-border bg-white p-4 rounded-[4px]"
-            >
-              <h3 className="mb-3 border-b border-border pb-2 font-medium text-text-primary">
-                {kategorieLabel(kategorie)}
-              </h3>
-              {items.length === 0 ? (
-                <p className="text-xs text-text-hint">Keine Todos</p>
-              ) : (
-                <div className="space-y-3">
-                  {items.map((todo) => (
-                    <TodoCard key={todo.id} todo={todo} />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <h2 className="mb-4 font-display text-xl text-text-primary">Statusboard</h2>
+        {todos.length === 0 ? (
+          <EmptyState>Keine Todos für dieses Inserat</EmptyState>
+        ) : (
+          <TodoKategorieBoard
+            todos={todos}
+            showDescription={mitarbeiter}
+            showStatusToggle={mitarbeiter}
+            showPartnerNachricht={mitarbeiter}
+            showEmailLink={mitarbeiter}
+          />
+        )}
       </section>
-        </>
-      )}
     </div>
   );
 }

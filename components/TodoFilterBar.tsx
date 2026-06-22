@@ -2,6 +2,9 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
+import { X } from "lucide-react";
 import {
   TODO_KATEGORIEN,
   TODO_PRIORITAETEN,
@@ -10,6 +13,13 @@ import {
   prioritaetLabel,
   statusLabel,
 } from "@/lib/types";
+
+const FILTER_KEYS = ["kategorie", "status", "prioritaet"] as const;
+const SORT_OPTIONS = [
+  { value: "", label: "Neueste zuerst" },
+  { value: "faellig_at", label: "Fälligkeit" },
+  { value: "titel", label: "Alphabetisch" },
+];
 
 export default function TodoFilterBar() {
   const router = useRouter();
@@ -28,8 +38,16 @@ export default function TodoFilterBar() {
     [router, searchParams],
   );
 
+  const hasActiveFilters = FILTER_KEYS.some((k) => searchParams.get(k));
+
+  function clearFilters() {
+    const params = new URLSearchParams(searchParams.toString());
+    FILTER_KEYS.forEach((k) => params.delete(k));
+    router.push(`/todos?${params.toString()}`);
+  }
+
   return (
-    <div className="mb-6 flex flex-wrap gap-4">
+    <div className="flex flex-wrap items-end gap-4">
       <FilterSelect
         label="Kategorie"
         value={searchParams.get("kategorie") ?? ""}
@@ -66,6 +84,22 @@ export default function TodoFilterBar() {
           })),
         ]}
       />
+      <FilterSelect
+        label="Sortierung"
+        value={searchParams.get("sort") ?? ""}
+        onChange={(v) => updateParam("sort", v)}
+        options={SORT_OPTIONS}
+      />
+      {hasActiveFilters && (
+        <Button
+          variant="secondary"
+          onClick={clearFilters}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs"
+        >
+          <X className="h-3.5 w-3.5" />
+          Filter löschen
+        </Button>
+      )}
     </div>
   );
 }
@@ -82,21 +116,17 @@ function FilterSelect({
   options: { value: string; label: string }[];
 }) {
   return (
-    <div>
-      <label className="mb-1 block text-[11px] uppercase tracking-wider text-text-hint">
-        {label}
-      </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="border border-border bg-white px-3 py-1.5 text-sm text-text-primary rounded-[4px]"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Select
+      label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="min-w-[140px]"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </Select>
   );
 }

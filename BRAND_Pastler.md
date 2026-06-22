@@ -1,5 +1,10 @@
 # BRAND.md — Pastler Immobilienverwaltung
-**Public Website + Internal Dashboard · Koblenz & Region**
+**Public Website ([pastler.com](https://pastler.com/)) + Internal Dashboard · Koblenz & Region**
+
+**Rechtsform:** Immobilienverwaltung Pastler UG (haftungsbeschränkt)  
+**Inhaber:** Jürgen Pastler — Zertifizierter Verwalter (IHK)  
+**Kontakt:** hausverwaltung@pastler.com · 0261 1349 4710  
+**Tagline:** *Ihr Wohneigentum in guten Händen*
 
 ---
 
@@ -15,15 +20,54 @@ The brand remains consistent. The information density adjusts.
 
 ---
 
+## Einzugsgebiet
+
+**Marketing-Formulierung (Website):** *Wir sind tätig zwischen Bonn und Koblenz.*
+
+**Operatives Gebiet:** Die verwalteten Objekte liegen zwischen **Bad Neuenahr-Ahrweiler** und **Braubach am Rhein** — im UNESCO-Weltkulturerbe Oberes Mittelrheintal.
+
+| Stadt / Ort | Relevanz |
+|-------------|----------|
+| Bonn – Koblenz | Äußere Grenzen der Tätigkeit |
+| Bad Neuenahr-Ahrweiler | Südliche Objektachse |
+| Braubach am Rhein | Nördliche Objektachse |
+| Andernach, Neuwied, Sinzig | Einzelstandorte (SEO-Unterseiten auf pastler.com) |
+
+**Dashboard:** Kein Karten-Widget nötig. Standortangaben in Mieter-/Inserate-Daten reichen.
+
+---
+
+## Markenwerte — Rittertugenden
+
+Das Logo (Ritter mit Schild) ist bewusst gewählt. Auf [pastler.com](https://pastler.com/) werden sechs Rittertugenden als Markenversprechen erklärt — *„Ihre Immobilie hat einen Ritter verdient.“*
+
+| Tugend | Bedeutung für Pastler |
+|--------|----------------------|
+| **Mut** | Einsatz für Gerechtigkeit, Schutz der Schwächeren (Mieter, Eigentümer) |
+| **Ehre** | Integrität, das Richtige tun — auch bei schwierigen Entscheidungen |
+| **Treue** | Loyalität gegenüber Eigentümern, Mietern und eigenen Werten |
+| **Höflichkeit** | Respektvoller Umgang, besonders mit Schwächeren |
+| **Großzügigkeit** | Ressourcen teilen, fair handeln |
+| **Demut** | Grenzen erkennen, sich stetig verbessern |
+
+**Regionaler Bezug:** Viele Ritterlegenden spielen im Oberen Mittelrheintal — Pastlers Heimatregion.
+
+**Copy-Hinweis:** Diese Werte in Marketing-Texten andeuten, nicht als Bullet-Liste im Dashboard wiederholen. Im Dashboard genügt das Logo als stilles Markenzeichen.
+
+---
+
 ## Colour Palette
+
+Farben gegen [pastler.com](https://pastler.com/) (Stand Juni 2026) abgeglichen. Die öffentliche Website nutzt **Burgund + Gold auf Weiß**; das Dashboard ergänzt **Navy** für Sidebar und Login (Kontrast, Lesbarkeit bei hoher Informationsdichte).
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `--navy` | `#1A2744` | Primary brand, headers, sidebar, footer |
-| `--navy-deep` | `#0D1828` | Hero background, dark sections |
+| `--navy` | `#1A2744` | Dashboard sidebar, login panel, dark sections |
+| `--navy-deep` | `#0D1828` | Login background, hero gradient start |
 | `--navy-mid` | `#243258` | Hover states on navy elements |
-| `--gold` | `#C4A962` | Accent, CTA buttons, active states, decorative lines |
-| `--gold-light` | `#D4BF8A` | Gold on dark backgrounds, hover gold |
+| `--burgundy` | `#9B2222` | Public-site headings, dashboard page titles (Playfair) |
+| `--gold` | `#D0BA93` | Accent, CTA buttons, active nav, gold period — **live site primary** |
+| `--gold-light` | `#E0D4B8` | Gold hover on dark backgrounds |
 | `--gold-pale` | `#F5EFD8` | Light gold tint for callout boxes |
 | `--warm-white` | `#F5F3EF` | Page background (public site, dashboard bg) |
 | `--white` | `#FFFFFF` | Cards, surfaces, form backgrounds |
@@ -51,7 +95,7 @@ The brand remains consistent. The information density adjusts.
 | Dashboard data | Inter | 13–14px | 400–500 |
 | Captions / Legal | Inter | 11–12px | 400 |
 
-Load via `next/font/google`:
+Load via `next/font/google` (Dashboard). Die Live-Website ([pastler.com](https://pastler.com/)) nutzt derzeit **Poppins** (Überschriften) und **Open Sans** (Fließtext) via Elementor — für das Dashboard bleiben Playfair + Inter die kanonische Kombination (Serif-Autorität + funktionale UI).
 ```typescript
 import { Playfair_Display, Inter } from 'next/font/google';
 
@@ -112,8 +156,9 @@ CTA button: --gold bg, --navy text, 2px radius, 12px font, 500 weight
 ```
 Background: --navy
 Width: 240px
-Logo: same as nav
+Logo: JPlogo graphic (88px wide), left-aligned
 Nav items: Inter 13px, rgba(255,255,255,0.65) → active: --gold text + left border 2px --gold
+Page titles (content area): Playfair Display, --burgundy
 ```
 
 ### Hero (Public)
@@ -135,7 +180,7 @@ Padding: 24–28px
 ### Buttons
 ```css
 /* Primary (public site CTA) */
-background: #C4A962; color: #1A2744; padding: 12px 26px; border-radius: 2px; font-size: 13px; font-weight: 500;
+background: #D0BA93; color: #9B2222; padding: 12px 26px; border-radius: 2px; font-size: 13px; font-weight: 500;
 
 /* Dashboard primary */
 background: #1A2744; color: #FFFFFF; padding: 8px 16px; border-radius: 4px; font-size: 13px;
@@ -183,28 +228,61 @@ Submit button: --gold bg, --navy text
 
 ## Logo / Wordmark
 
-No graphic logo for v1. Use the typographic wordmark:
+### Graphic logo (primary)
+
+Ritter mit Schild — Quelle: [pastler.com](https://pastler.com/), Design: [Evamaria Deisen](http://evamariadeisen.de/).
+
+| Asset | Pfad | Verwendung |
+|-------|------|------------|
+| Knight logo (AVIF) | `public/JPlogo-png.avif` | Sidebar, Login — via `components/PastlerLogo.tsx` |
+| Fallback SVG | `public/pastler-logo.svg` | Nur Entwicklung / Platzhalter |
+
+**Dashboard-Regel:** Graphic logo in Sidebar und Login. Kein separates Favicon-Setup nötig für v1.
+
+### Typographic wordmark (secondary)
+
+Ergänzend, wenn kein Bild passt (z. B. enge Mobile-Nav):
+
 ```
 PASTLER.
 ```
+
 - Font: Playfair Display 400, letter-spacing: 3px
-- "PASTLER" in white (on dark) or --navy (on light)
-- "." in --gold always
-- Do not separate the period from the wordmark
+- „PASTLER“ in white (on dark) oder `--burgundy` (on light)
+- „.“ immer in `--gold`
+- Punkt nicht vom Wort trennen
 
 ---
 
 ## Copy Tone
 
 **Public website:** Confident, established, slightly formal. Sie-form. Short sentences.
-- ✅ "Ihr Wohneigentum in professionellen Händen."
-- ✅ "Wir reagieren. Innerhalb von 24 Stunden."
-- ❌ "Wir sind super stolz auf unser tolles Team!"
+- ✅ „Ihr Wohneigentum in guten Händen.“
+- ✅ „Hier ist Ihr Wohneigentum in guten Händen!“ (Inhaber-Zitat)
+- ✅ „Wir reagieren. Innerhalb von 24 Stunden.“
+- ❌ „Wir sind super stolz auf unser tolles Team!“
 
 **Dashboard UI:** Functional. Minimal. German labels only where needed.
 - ✅ "Keine offenen To-Dos"
 - ✅ "Eingang 14:23 Uhr"
 - ❌ "Alles erledigt! 🎉"
+
+---
+
+## Dashboard UI Kit
+
+Material-Dashboard-inspirierte Shell (Sidebar + TopBar + elevated Cards), umgesetzt als eigenes Tailwind-v4-System — **ohne** externes UI-Framework.
+
+| Bereich | Pfad / Token |
+|---------|----------------|
+| Design-Tokens | `app/globals.css` — Farben, `--shadow-card`, `--sidebar-width`, `--topbar-height` |
+| Primitives | `components/ui/*` — Card, StatCard, PageHeader, Breadcrumbs, Button, Input, Select, DataTable |
+| App-Shell | `components/Sidebar.tsx`, `components/TopBar.tsx`, `app/(dashboard)/layout.tsx` |
+| Logo | `components/PastlerLogo.tsx` → `public/JPlogo-png.avif` |
+
+**Shadow-Utilities:** `.shadow-card`, `.shadow-sidebar` in `globals.css`
+
+**Regel:** Neue Dashboard-UI über `components/ui/*` bauen, nicht inline auf jeder Seite.
 
 ---
 

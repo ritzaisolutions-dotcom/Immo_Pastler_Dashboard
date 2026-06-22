@@ -1,8 +1,19 @@
 import { createClient } from "@/utils/supabase/server";
+import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
 import Badge from "@/components/Badge";
-import TodoCard from "@/components/TodoCard";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import EmptyState from "@/components/ui/EmptyState";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { formatDate, type TodoWithMieter } from "@/lib/types";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  Calendar,
+  CheckSquare,
+  Users,
+} from "lucide-react";
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -10,6 +21,10 @@ function todayIsoDate(): string {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const mitarbeiter = isMitarbeiter(user);
   const today = todayIsoDate();
 
   const [
@@ -47,61 +62,88 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-8 font-display text-3xl text-text-primary">Dashboard</h1>
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          !mitarbeiter
+            ? "Eingeschränkter Lesezugriff (Eigentümer)"
+            : undefined
+        }
+      />
 
       <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Offene Todos" value={offenCount ?? 0} />
-        <MetricCard label="Hohe Priorität" value={hochCount ?? 0} />
-        <MetricCard label="Heute fällig" value={faelligCount ?? 0} />
-        <MetricCard label="Aktive Mieter" value={aktivMieterCount ?? 0} />
+        <StatCard
+          label="Offene Todos"
+          value={offenCount ?? 0}
+          icon={CheckSquare}
+          href="/todos?status=offen"
+        />
+        <StatCard
+          label="Hohe Priorität"
+          value={hochCount ?? 0}
+          icon={AlertTriangle}
+          href="/todos?prioritaet=hoch"
+        />
+        <StatCard
+          label="Heute fällig"
+          value={faelligCount ?? 0}
+          icon={Calendar}
+          href="/todos"
+        />
+        <StatCard
+          label="Aktive Mieter"
+          value={aktivMieterCount ?? 0}
+          icon={Users}
+          href="/mieter"
+        />
       </div>
 
-      <section>
-        <h2 className="mb-4 font-display text-xl text-text-primary">
-          Aktuelle Todos
-        </h2>
-        {todos.length === 0 ? (
-          <p className="text-sm text-text-secondary">Keine offenen To-Dos</p>
-        ) : (
-          <div className="space-y-3">
-            {todos.map((todo) => (
-              <div
-                key={todo.id}
-                className="flex flex-wrap items-center justify-between gap-3 border border-border bg-white p-4 rounded-[4px]"
-              >
-                <div>
-                  <p className="font-medium text-text-primary">{todo.titel}</p>
-                  <p className="mt-1 text-xs text-text-hint">
-                    Fällig: {formatDate(todo.faellig_at)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {todo.kategorie && (
-                    <Badge
-                      variant={{ type: "kategorie", value: todo.kategorie }}
-                    />
-                  )}
-                  <Badge
-                    variant={{ type: "prioritaet", value: todo.prioritaet }}
-                  />
-                  <Badge variant={{ type: "status", value: todo.status }} />
-                </div>
-              </div>
-            ))}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl text-text-primary">
+              Aktuelle Todos
+            </h2>
+            <Link href="/todos" className="text-xs text-navy hover:text-gold">
+              Alle anzeigen →
+            </Link>
           </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function MetricCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="border border-border bg-white p-6 rounded-[4px]">
-      <p className="font-display text-[38px] leading-none text-text-primary">
-        {value}
-      </p>
-      <p className="mt-2 text-xs text-text-secondary">{label}</p>
+        </CardHeader>
+        <CardBody className="p-0">
+          {todos.length === 0 ? (
+            <div className="px-6 py-8">
+              <EmptyState>Keine offenen To-Dos</EmptyState>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {todos.map((todo) => (
+                <div
+                  key={todo.id}
+                  className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-warm-white/50"
+                >
+                  <div>
+                    <p className="font-medium text-text-primary">{todo.titel}</p>
+                    <p className="mt-1 text-xs text-text-hint">
+                      Fällig: {formatDate(todo.faellig_at)}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {todo.kategorie && (
+                      <Badge
+                        variant={{ type: "kategorie", value: todo.kategorie }}
+                      />
+                    )}
+                    <Badge
+                      variant={{ type: "prioritaet", value: todo.prioritaet }}
+                    />
+                    <Badge variant={{ type: "status", value: todo.status }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
     </div>
   );
 }
