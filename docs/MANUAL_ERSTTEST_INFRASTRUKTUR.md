@@ -18,7 +18,7 @@
 | Live n8n → Supabase | **FAIL** — siehe Abschnitt 4 |
 
 **Bekannter n8n-Fehler (Execution-Log):** Node „Duplicate Check“ bricht ab mit  
-`failed to parse logic tree ((message_id.is.undefined))` — IMAP liefert bei manchen Mails kein `messageId`.  
+`failed to parse logic tree ((message_id.eq....))` — Ursache: **PostgREST kann Filterwerte mit Leerzeichen, Klammern, `<>` oder `[]` nicht parsen**. Das passiert, wenn IMAP kein `messageId` liefert und der Fallback aus Betreff+Datum gebaut wird (z. B. `<[Pastler-Test] Haustürschloss…@pastler-fallback.local>`).  
 **Fix in n8n-UI:** siehe [Schritt 4.3](#43-n8n-workflow-fixen-einmalig).
 
 ---
@@ -105,6 +105,7 @@ Als **Mitarbeiter** einloggen.
 | 6 | `/mieter` | Spalten **Vorname \| Nachname** (z. B. Thomas \| Weber) | ☐ |
 | 7 | `/chat` | Frage: „Welche offenen Todos gibt es?“ → Antwort von Mistral | ☐ |
 | 8 | `/todos` | Status ändern; externes Todo → **Partner-Entwurf** lesen | ☐ |
+
 | 9 | `/vermieter` | Seite lädt | ☐ |
 | 9b | `/datenschutz` | Seite lädt | ☐ |
 | 10 | `/inserate` | Redirect → `/objekte` | ☐ |
@@ -174,34 +175,69 @@ Workflow „Pastler Email Ingestion“ → **Executions**:
 
 ### 4.3 n8n Workflow fixen (einmalig)
 
-**Problem:** `Duplicate Check` scheitert, wenn `messageId` vom IMAP leer ist.
+**Problem:** `Duplicate Check` scheitert mit  
+`failed to parse logic tree ((message_id.eq.<…>))`, wenn:
+
+1. IMAP kein `messageId` liefert **oder**
+2. der Fallback aus Betreff + Datum Sonderzeichen enthält (Leerzeichen, `[]`, `()`, Umlaute).
+
+PostgREST/Supabase akzeptiert in `eq`-Filtern nur **einfache ASCII-IDs** — keine freien Texte.
 
 **Empfohlener Fix in n8n-UI:**
 
 1. Workflow öffnen → zwischen **IMAP Trigger** und **Duplicate Check** einen **Code**-Node einfügen:  
    **Name:** `Normalize Message ID`
-2. Code:
+2. Code (vollständig aus [`n8n/code/normalize-message-id.js`](../n8n/code/normalize-message-id.js) kopieren):
 
 ```javascript
+function hashFallback(seed) {
+  let h1 = 5381;
+  let h2 = 52711;
+  const s = String(seed);
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    h1 = (h1 * 33) ^ c;
+    h2 = (h2 * 33) ^ c;
+  }
+  return `pastler-fallback-${(h1 >>> 0).toString(16)}${(h2 >>> 0).toString(16)}@import.local`;
+}
+
+function sanitizeMessageId(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") {
+    return null;
+  }
+  let id = String(raw).trim();
+  if (id.startsWith("<") && id.endsWith(">")) {
+    id = id.slice(1, -1).trim();
+  }
+  if (/^[A-Za-z0-9@._+-]+$/.test(id)) {
+    return id;
+  }
+  return hashFallback(id);
+}
+
 return $input.all().map((item) => {
   const j = item.json;
-  const subject = String(j.subject || "no-subject").trim().slice(0, 80);
-  const datePart = new Date(j.date || Date.now()).toISOString().replace(/[:.]/g, "-");
-  const resolvedMessageId =
-    j.messageId || `<pastler-${subject}-${datePart}@import.local>`;
+  const fromAddr =
+    j.from?.value?.[0]?.address || j.from?.address || "unknown";
+  const seed = `${j.subject || "no-subject"}|${j.date || ""}|${fromAddr}`;
+  const resolvedMessageId = sanitizeMessageId(j.messageId) || hashFallback(seed);
   return { json: { ...j, resolvedMessageId } };
 });
 ```
 
+Ergebnis: stabile IDs wie `pastler-fallback-a1b2c3d4e5f67890@import.local` statt Betreff-Strings.
+
 3. Verkabeln: `IMAP Trigger` → `Normalize Message ID` → `Duplicate Check`  
 4. Im Node **Duplicate Check**: Filter `message_id` **eq**  
+   `={{ $json.resolvedMessageId }}`  
+5. Im Node **Raw Email**: Feld `message_id` auf  
    `={{ $('Normalize Message ID').item.json.resolvedMessageId }}`  
-5. Im Node **Raw Email**: Feld `message_id` ebenfalls auf `resolvedMessageId` setzen  
 6. **Workflow speichern** → **Deaktivieren** → 3 Sek. warten → **Aktivieren** (Trigger neu laden)
 
 Alternativ: Workflow aus Repo neu importieren:  
 [`n8n/workflows/email-ingestion-partner.json`](../n8n/workflows/email-ingestion-partner.json)  
-(dort ist der Fallback bereits vorbereitet — danach Credentials neu zuweisen).
+(Normalize-Node ist enthalten — danach Credentials neu zuweisen).
 
 | Erwartung | ☐ |
 |-----------|---|

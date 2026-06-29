@@ -17,14 +17,12 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Pastler Immobilienberatung",
-    template: "%s · Pastler",
+    default: "Pastler Immobilienberatung — Dashboard",
+    template: "%s · Pastler Immobilienberatung",
   },
-  description: "Internes Dashboard — Immobilienverwaltung Pastler UG",
-  icons: {
-    icon: [{ url: "/JPlogo-png.avif", type: "image/avif" }],
-    apple: "/JPlogo-png.avif",
-  },
+  description:
+    "Internes Dashboard der Pastler Immobilienberatung — Hausverwaltung Koblenz",
+  applicationName: "Pastler Dashboard",
 };
 
 export default function RootLayout({

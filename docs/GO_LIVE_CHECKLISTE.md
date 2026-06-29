@@ -14,6 +14,8 @@
 
 **Empfohlene Reihenfolge:** Infrastruktur → Automation → SMTP → Stammdaten → Abnahme.
 
+**Mehrkunden-Rollout:** [`MULTI_CLIENT_LIVE_RUNBOOK.md`](./MULTI_CLIENT_LIVE_RUNBOOK.md) (isolierte Client-Stacks, reproduzierbares Onboarding)
+
 ---
 
 ## Übersicht (Fortschritt)

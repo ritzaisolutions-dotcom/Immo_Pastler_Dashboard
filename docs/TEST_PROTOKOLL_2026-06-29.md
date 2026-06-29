@@ -39,9 +39,9 @@
 | Workflow | `Pastler Email Ingestion + Partner Draft` — **aktiv** |
 | IMAP | Credential `marco@ritz-ai.solutions` — korrekt |
 | Supabase | Credential `IM24` → `htyeflqymmbcjhvknjoe` — korrekt |
-| **Fehler** | Node **Duplicate Check**: `message_id.is.undefined` — IMAP liefert bei Testmails kein `messageId` |
+| **Fehler** | Node **Duplicate Check**: `failed to parse logic tree ((message_id.eq.<…>))` — Fallback-IDs mit Betreff/Sonderzeichen brechen PostgREST-Filter; IMAP liefert oft kein `messageId` |
 | Mistral | Credential **401** — Key in n8n ungültig/abgelaufen |
-| Fix | Code-Node „Normalize Message ID“ + Duplicate Check auf `resolvedMessageId` — **manuell in n8n-UI** (siehe Manual) |
+| Fix | Code-Node „Normalize Message ID“ (Hash-Fallback, filter-sichere IDs) + Duplicate Check auf `$json.resolvedMessageId` — **manuell in n8n-UI** (siehe Manual §4.3) |
 
 Testmails kamen im Postfach an (SMTP OK), landeten aber nicht in Supabase wegen Execution-Error.
 

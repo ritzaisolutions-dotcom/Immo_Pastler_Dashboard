@@ -23,6 +23,16 @@
     },
     {
       "parameters": {
+        "jsCode": "function hashFallback(seed) {\n  let h1 = 5381;\n  let h2 = 52711;\n  const s = String(seed);\n  for (let i = 0; i < s.length; i++) {\n    const c = s.charCodeAt(i);\n    h1 = (h1 * 33) ^ c;\n    h2 = (h2 * 33) ^ c;\n  }\n  return `pastler-fallback-${(h1 >>> 0).toString(16)}${(h2 >>> 0).toString(16)}@import.local`;\n}\n\nfunction sanitizeMessageId(raw) {\n  if (raw === undefined || raw === null || String(raw).trim() === \"\") {\n    return null;\n  }\n  let id = String(raw).trim();\n  if (id.startsWith(\"<\") && id.endsWith(\">\")) {\n    id = id.slice(1, -1).trim();\n  }\n  if (/^[A-Za-z0-9@._+-]+$/.test(id)) {\n    return id;\n  }\n  return hashFallback(id);\n}\n\nreturn $input.all().map((item) => {\n  const j = item.json;\n  const fromAddr =\n    j.from?.value?.[0]?.address || j.from?.address || \"unknown\";\n  const seed = `${j.subject || \"no-subject\"}|${j.date || \"\"}|${fromAddr}`;\n  const resolvedMessageId = sanitizeMessageId(j.messageId) || hashFallback(seed);\n  return { json: { ...j, resolvedMessageId } };\n});"
+      },
+      "id": "c1d2e3f4-0001-4000-8000-000000000001b",
+      "name": "Normalize Message ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [110, 300]
+    },
+    {
+      "parameters": {
         "operation": "getAll",
         "tableId": "pastler_emails",
         "returnAll": false,
@@ -31,7 +41,7 @@
           "conditions": [
             {
               "keyName": "message_id",
-              "keyValue": "={{ $json.messageId || '<' + ($json.subject || 'no-subject') + '-' + ($json.date || $now.toISO()) + '@pastler-fallback.local>' }}"
+              "keyValue": "={{ $json.resolvedMessageId }}"
             }
           ]
         }
@@ -83,7 +93,7 @@
         "tableId": "pastler_emails",
         "fieldsUi": {
           "fieldValues": [
-            { "fieldId": "message_id", "fieldValue": "={{ $('IMAP Trigger').item.json.messageId || '<' + ($('IMAP Trigger').item.json.subject || 'no-subject') + '-' + ($('IMAP Trigger').item.json.date || $now.toISO()) + '@pastler-fallback.local>' }}" },
+            { "fieldId": "message_id", "fieldValue": "={{ $('Normalize Message ID').item.json.resolvedMessageId }}" },
             { "fieldId": "von_email", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].address }}" },
             { "fieldId": "von_name", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].name }}" },
             { "fieldId": "betreff", "fieldValue": "={{ $('IMAP Trigger').item.json.subject }}" },
@@ -526,6 +536,9 @@
   ],
   "connections": {
     "IMAP Trigger": {
+      "main": [[{ "node": "Normalize Message ID", "type": "main", "index": 0 }]]
+    },
+    "Normalize Message ID": {
       "main": [[{ "node": "Duplicate Check", "type": "main", "index": 0 }]]
     },
     "Duplicate Check": {

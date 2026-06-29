@@ -102,30 +102,33 @@ Todo-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6
 | `partner` | `pastler_partner` |
 | `partner_nachrichten` | `pastler_partner_nachrichten` |
 
-## Workflow 1: Email Ingestion + Partner (18 Nodes)
+## Workflow 1: Email Ingestion + Partner (19 Nodes)
 
 **Duplikat-Schutz vor LLM:** Jede `message_id` wird **zweifach** abgesichert — Lookup in Supabase **und** `UNIQUE` auf `pastler_emails.message_id`. Mistral läuft nur, wenn Insert erfolgreich war (`IF Email Saved`). Duplikate und Race-Conditions enden in **Stop Duplicate**, ohne LLM-Kosten.
+
+**Wichtig:** Node **Normalize Message ID** erzeugt filter-sichere IDs (Hash-Fallback). Betreff-basierte Fallbacks brechen den Supabase `eq`-Filter (`failed to parse logic tree`). Code: [`code/normalize-message-id.js`](./code/normalize-message-id.js).
 
 | # | Node | Configuration |
 |---|------|---------------|
 | 1 | IMAP Trigger | Poll every 5 min; mark as read |
-| 2 | Duplicate Check | `pastler_emails` WHERE `message_id`; `alwaysOutputData: true` |
-| 3 | IF New Email | `$json.id` leer → neu; sonst Stop Duplicate |
-| 4 | Raw Email | Insert `pastler_emails`; `continueOnFail: true` |
-| 5 | IF Email Saved | `$json.id` gesetzt → weiter; sonst Stop (Race/Duplikat) |
-| 6 | HTTP Request | `Supabase RPC Resolve Zuordnung` → `pastler_resolve_zuordnung` (supabaseApi) |
-| 7 | LLM Chain | Mistral — Todo + Use-Case + Gewerk (`continueOnFail: true`) |
-| 8 | Code Node | JSON parse + Zuordnung aus Node 6, `llm_fallback`, `gewerk`, `partner_noetig` |
-| 9 | Supabase insert | `pastler_todos` inkl. `vermieter_id`, `zuordnung_*` |
-| 10 | Supabase update | `pastler_emails`: `verarbeitet`, Zuordnungsfelder |
-| 11 | IF Alert | `prioritaet = hoch` OR `llm_fallback` OR `zuordnung_quelle = unbekannt` |
-| 12 | Telegram | Metadaten + Hinweis bei Fallback / manueller Zuordnung (DSGVO) |
-| 13 | IF | `partner_noetig === true` && `gewerk` gesetzt |
-| 14 | Supabase getAll | `pastler_partner` WHERE `gewerk` + `aktiv = true` LIMIT 1 |
-| 15 | IF | Partner gefunden |
-| 16 | LLM Chain | Partner-E-Mail Entwurf (Betreff + Text) |
-| 17 | Supabase insert | `pastler_partner_nachrichten` status=`entwurf` |
-| 18 | Supabase update | `pastler_todos` SET `partner_id`, `use_case` |
+| 2 | Normalize Message ID | Code: `resolvedMessageId` (sanitize + hash fallback) |
+| 3 | Duplicate Check | `pastler_emails` WHERE `message_id = $json.resolvedMessageId`; `alwaysOutputData: true` |
+| 4 | IF New Email | `$json.id` leer → neu; sonst Stop Duplicate |
+| 5 | Raw Email | Insert `pastler_emails`; `message_id` = `resolvedMessageId`; `continueOnFail: true` |
+| 6 | IF Email Saved | `$json.id` gesetzt → weiter; sonst Stop (Race/Duplikat) |
+| 7 | HTTP Request | `Supabase RPC Resolve Zuordnung` → `pastler_resolve_zuordnung` (supabaseApi) |
+| 8 | LLM Chain | Mistral — Todo + Use-Case + Gewerk (`continueOnFail: true`) |
+| 9 | Code Node | JSON parse + Zuordnung aus Node 7, `llm_fallback`, `gewerk`, `partner_noetig` |
+| 10 | Supabase insert | `pastler_todos` inkl. `vermieter_id`, `zuordnung_*` |
+| 11 | Supabase update | `pastler_emails`: `verarbeitet`, Zuordnungsfelder |
+| 12 | IF Alert | `prioritaet = hoch` OR `llm_fallback` OR `zuordnung_quelle = unbekannt` |
+| 13 | Telegram | Metadaten + Hinweis bei Fallback / manueller Zuordnung (DSGVO) |
+| 14 | IF | `partner_noetig === true` && `gewerk` gesetzt |
+| 15 | Supabase getAll | `pastler_partner` WHERE `gewerk` + `aktiv = true` LIMIT 1 |
+| 16 | IF | Partner gefunden |
+| 17 | LLM Chain | Partner-E-Mail Entwurf (Betreff + Text) |
+| 18 | Supabase insert | `pastler_partner_nachrichten` status=`entwurf` |
+| 19 | Supabase update | `pastler_todos` SET `partner_id`, `use_case` |
 
 Nodes 11–12 laufen parallel nach Insert Todo (Alert-Zweig). Partner-Kette ab Node 13 unverändert.
 
