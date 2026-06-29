@@ -10,13 +10,14 @@ INSERT INTO pastler_eigentuemer (id, name, email, beschreibung) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── Inserate ───────────────────────────────────────────────────────────────
-INSERT INTO pastler_inserate (id, vermieter_id, adresse, plz, stadt, typ, eigentuemer_name, eigentuemer_email, einheiten, beschreibung, notizen) VALUES
-  ('11111111-1111-1111-1111-111111111101', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01', 'Hauptstraße 12', '56068', 'Koblenz', 'Mietsverwaltung', 'Hans Müller', 'hans.mueller@demo-pastler.de', 8, 'Mehrfamilienhaus mit 8 Wohneinheiten, zentrale Lage', 'Baujahr 1978'),
-  ('11111111-1111-1111-1111-111111111102', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02', 'Rheinweg 45', '56073', 'Koblenz', 'WEG', 'Anna Schmidt', 'anna.schmidt@demo-pastler.de', 12, 'WEG mit 12 Wohneinheiten am Rhein', 'Gemeinschaftseigentum inkl. Tiefgarage'),
-  ('11111111-1111-1111-1111-111111111103', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa03', 'Marktplatz 3', '56727', 'Mayen', 'Sondereigentum', 'Dr. Petra Lehmann', 'p.lehmann@demo-pastler.de', 4, 'Mischobjekt Gewerbe EG + Wohnen OG', 'Denkmalgeschütztes Gebäude')
+INSERT INTO pastler_inserate (id, vermieter_id, adresse, plz, stadt, typ, eigentuemer_name, eigentuemer_email, einheiten, beschreibung, notizen, bild_url) VALUES
+  ('11111111-1111-1111-1111-111111111101', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01', 'Hauptstraße 12', '56068', 'Koblenz', 'Mietsverwaltung', 'Hans Müller', 'hans.mueller@demo-pastler.de', 8, 'Mehrfamilienhaus mit 8 Wohneinheiten, zentrale Lage', 'Baujahr 1978', 'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1600'),
+  ('11111111-1111-1111-1111-111111111102', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02', 'Rheinweg 45', '56073', 'Koblenz', 'WEG', 'Anna Schmidt', 'anna.schmidt@demo-pastler.de', 12, 'WEG mit 12 Wohneinheiten am Rhein', 'Gemeinschaftseigentum inkl. Tiefgarage', 'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1600'),
+  ('11111111-1111-1111-1111-111111111103', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa03', 'Marktplatz 3', '56727', 'Mayen', 'Sondereigentum', 'Dr. Petra Lehmann', 'p.lehmann@demo-pastler.de', 4, 'Mischobjekt Gewerbe EG + Wohnen OG', 'Denkmalgeschütztes Gebäude', 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1600')
 ON CONFLICT (id) DO UPDATE SET
   vermieter_id = EXCLUDED.vermieter_id,
-  beschreibung = EXCLUDED.beschreibung;
+  beschreibung = EXCLUDED.beschreibung,
+  bild_url = EXCLUDED.bild_url;
 
 -- ─── Mieter ─────────────────────────────────────────────────────────────────
 INSERT INTO pastler_mieter (id, inserat_id, name, email, telefon, einheit_nr, einzug_datum, status) VALUES

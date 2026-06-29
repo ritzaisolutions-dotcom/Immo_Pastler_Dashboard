@@ -28,7 +28,6 @@ export default function LoginPage() {
       email,
       password,
     });
-
     if (authError) {
       if (authError.message.includes("Invalid login")) {
         setError("E-Mail oder Passwort ist falsch");
@@ -40,7 +39,6 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
     router.push("/dashboard");
     router.refresh();
   }
@@ -63,6 +61,23 @@ export default function LoginPage() {
     }
 
     setInfo("E-Mail gesendet — prüfe deinen Posteingang");
+  }
+
+  async function handleOAuthLogin() {
+    setError(null);
+    setLoading(true);
+    const supabase = createClient();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    });
+    if (oauthError) {
+      setError("OAuth-Anmeldung fehlgeschlagen. Bitte erneut versuchen.");
+      setLoading(false);
+      return;
+    }
   }
 
   return (
@@ -130,6 +145,18 @@ export default function LoginPage() {
                 className="w-full py-2.5 font-medium"
               >
                 {loading ? "Anmelden…" : "Anmelden"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={loading}
+                onClick={() => {
+                  void handleOAuthLogin();
+                }}
+                className="w-full py-2.5 font-medium"
+              >
+                Mit Google anmelden
               </Button>
             </form>
           ) : (

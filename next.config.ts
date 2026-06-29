@@ -19,7 +19,7 @@ const securityHeaders = [
       // unsafe-inline + unsafe-eval required by Next.js hydration and Supabase client SDK
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.supabase.co",
+      "img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com",
       "font-src 'self'",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
       "frame-ancestors 'none'",
@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: supabaseHostname,
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+        pathname: "/**",
       },
     ],
   },
