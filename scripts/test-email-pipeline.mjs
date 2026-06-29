@@ -12,6 +12,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import nodemailer from "nodemailer";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -108,12 +109,14 @@ async function sendTestEmails() {
   });
 
   for (const mail of TEST_EMAILS) {
+    const messageId = `<pastler-test-${crypto.randomUUID()}@demo.local>`;
     await transport.sendMail({
       from: `"${mail.fromName}" <${user}>`,
       replyTo: mail.from,
       to: INBOX,
       subject: mail.subject,
       text: mail.text,
+      messageId,
     });
     console.log(`Gesendet: ${mail.subject}`);
   }

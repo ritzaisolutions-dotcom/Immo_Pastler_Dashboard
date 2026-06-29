@@ -31,7 +31,7 @@
           "conditions": [
             {
               "keyName": "message_id",
-              "keyValue": "={{ $json.messageId }}"
+              "keyValue": "={{ $json.messageId || '<' + ($json.subject || 'no-subject') + '-' + ($json.date || $now.toISO()) + '@pastler-fallback.local>' }}"
             }
           ]
         }
@@ -83,7 +83,7 @@
         "tableId": "pastler_emails",
         "fieldsUi": {
           "fieldValues": [
-            { "fieldId": "message_id", "fieldValue": "={{ $('IMAP Trigger').item.json.messageId }}" },
+            { "fieldId": "message_id", "fieldValue": "={{ $('IMAP Trigger').item.json.messageId || '<' + ($('IMAP Trigger').item.json.subject || 'no-subject') + '-' + ($('IMAP Trigger').item.json.date || $now.toISO()) + '@pastler-fallback.local>' }}" },
             { "fieldId": "von_email", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].address }}" },
             { "fieldId": "von_name", "fieldValue": "={{ $('IMAP Trigger').item.json.from.value[0].name }}" },
             { "fieldId": "betreff", "fieldValue": "={{ $('IMAP Trigger').item.json.subject }}" },
