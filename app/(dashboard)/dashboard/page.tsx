@@ -71,7 +71,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Offene Todos"
           value={offenCount ?? 0}
