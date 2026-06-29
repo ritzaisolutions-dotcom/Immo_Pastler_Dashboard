@@ -85,6 +85,7 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
             <TableHeaderCell>Vorname</TableHeaderCell>
             <TableHeaderCell>Nachname</TableHeaderCell>
             <TableHeaderCell>E-Mail (Match-Key)</TableHeaderCell>
+            <TableHeaderCell>Telefon</TableHeaderCell>
             <TableHeaderCell>Wohnung</TableHeaderCell>
             <TableHeaderCell>Objekt</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
@@ -110,6 +111,9 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
                   </TableCell>
                   <TableCell className="text-text-secondary">
                     {m.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.telefon ?? "—"}
                   </TableCell>
                   <TableCell className="text-text-secondary">{wohnung}</TableCell>
                   <TableCell className="text-text-secondary">
