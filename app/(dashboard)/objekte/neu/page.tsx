@@ -17,7 +17,7 @@ export default async function InseratNeuPage() {
 
   return (
     <div>
-      <PageHeader title="Neues Inserat" />
+      <PageHeader title="Neues Objekt" />
       <Card>
         <CardBody>
           <InseratForm vermieter={vermieter} />

@@ -1,3 +1,5 @@
+import { gewerkDisplayLabel } from "./gewerk";
+
 export type TodoStatus = "offen" | "in_bearbeitung" | "erledigt" | "abgelehnt";
 export type TodoPrioritaet = "hoch" | "mittel" | "niedrig";
 export type TodoKategorie = "extern" | "mieter" | "intern";
@@ -71,6 +73,7 @@ export interface Mieter {
   plz: string | null;
   stadt: string | null;
   einheit_nr: string | null;
+  wohneinheit_id: string | null;
   einzug_datum: string | null;
   auszug_datum: string | null;
   status: MieterStatus;
@@ -78,13 +81,19 @@ export interface Mieter {
   created_at: string;
 }
 
-export type PartnerGewerk =
-  | "elektriker"
-  | "sanitaer"
-  | "schluessel"
-  | "reinigung"
-  | "hausmeister"
-  | "allgemein";
+export type PartnerGewerk = string;
+
+export type PartnerAnredeForm = "sie" | "du";
+
+export type ObjektPartnerGewerkKategorie = string;
+
+export interface Gewerk {
+  key: string;
+  label: string;
+  objekt_relevant: boolean;
+  sort_order: number;
+  created_at?: string;
+}
 
 export type PartnerNachrichtStatus = "entwurf" | "gesendet" | "abgelehnt";
 
@@ -101,7 +110,29 @@ export interface Partner {
   beschreibung: string | null;
   notizen: string | null;
   aktiv: boolean;
+  anrede_form: PartnerAnredeForm;
+  einsatzgebiet: string | null;
   created_at: string;
+}
+
+export interface Wohneinheit {
+  id: string;
+  inserat_id: string;
+  nummer: string;
+  bezeichnung: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface WohneinheitWithMieter extends Wohneinheit {
+  mieter: Pick<Mieter, "id" | "name" | "email"> | null;
+  open_todos_count?: number;
+}
+
+export interface ObjektPartnerGewerk {
+  inserat_id: string;
+  gewerk: ObjektPartnerGewerkKategorie;
+  partner_id: string;
 }
 
 export interface PartnerNachricht {
@@ -167,38 +198,37 @@ export interface InseratWithVermieter extends Inserat {
   vermieter: Pick<Vermieter, "id" | "name" | "firma" | "email"> | null;
 }
 
+/** @deprecated Fallback — Gewerke aus `pastler_gewerke` laden */
 export const PARTNER_GEWERKE: PartnerGewerk[] = [
   "elektriker",
   "sanitaer",
   "schluessel",
   "reinigung",
   "hausmeister",
+  "maler",
   "allgemein",
 ];
 
-export function isPartnerGewerk(value: string): value is PartnerGewerk {
-  return PARTNER_GEWERKE.includes(value as PartnerGewerk);
+/** @deprecated Fallback — objekt-relevante Gewerke aus DB laden */
+export const OBJEKT_PARTNER_GEWERKE: ObjektPartnerGewerkKategorie[] = [
+  "elektriker",
+  "sanitaer",
+  "maler",
+  "hausmeister",
+];
+
+export function gewerkLabel(
+  gewerk: string,
+  gewerke?: ReadonlyArray<Pick<Gewerk, "key" | "label">>,
+): string {
+  return gewerkDisplayLabel(gewerk, gewerke);
 }
 
-export function gewerkLabel(gewerk: PartnerGewerk): string {
-  switch (gewerk) {
-    case "elektriker":
-      return "Elektriker";
-    case "sanitaer":
-      return "Sanitär";
-    case "schluessel":
-      return "Schlüsseldienst";
-    case "reinigung":
-      return "Reinigung";
-    case "hausmeister":
-      return "Hausmeister";
-    case "allgemein":
-      return "Allgemein";
-    default: {
-      const _exhaustive: never = gewerk;
-      return _exhaustive;
-    }
-  }
+export function objektPartnerGewerkLabel(
+  gewerk: string,
+  gewerke?: ReadonlyArray<Pick<Gewerk, "key" | "label">>,
+): string {
+  return gewerkDisplayLabel(gewerk, gewerke);
 }
 
 export function nachrichtStatusLabel(status: PartnerNachrichtStatus): string {
@@ -299,6 +329,25 @@ export function kategorieLabel(kategorie: TodoKategorie | null): string {
       return _exhaustive;
     }
   }
+}
+
+
+export function anredeFormLabel(form: PartnerAnredeForm): string {
+  return form === "du" ? "Du" : "Sie";
+}
+
+export function splitName(fullName: string): {
+  vorname: string;
+  nachname: string;
+} {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length <= 1) {
+    return { vorname: parts[0] ?? "", nachname: "" };
+  }
+  return {
+    vorname: parts[0] ?? "",
+    nachname: parts.slice(1).join(" "),
+  };
 }
 
 export function mieterStatusLabel(status: MieterStatus): string {

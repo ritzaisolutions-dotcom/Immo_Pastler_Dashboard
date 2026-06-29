@@ -44,9 +44,11 @@ export function TableBody({ children }: { children: React.ReactNode }) {
 export function TableRow({
   children,
   className,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <tr
@@ -54,6 +56,7 @@ export function TableRow({
         "border-b border-border last:border-0 transition-colors hover:bg-warm-white/50",
         className,
       )}
+      onClick={onClick}
     >
       {children}
     </tr>
@@ -63,9 +66,15 @@ export function TableRow({
 export function TableCell({
   children,
   className,
+  colSpan,
 }: {
   children: React.ReactNode;
   className?: string;
+  colSpan?: number;
 }) {
-  return <td className={cn("px-4 py-3", className)}>{children}</td>;
+  return (
+    <td colSpan={colSpan} className={cn("px-4 py-3", className)}>
+      {children}
+    </td>
+  );
 }

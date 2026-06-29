@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Mail,
   Menu,
+  MessageSquare,
   Shield,
   UserCircle,
   Users,
@@ -18,18 +19,27 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-const baseNavItems: { href: string; label: string; icon: LucideIcon }[] = [
+const eigentuemerNavItems: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/todos", label: "Todos", icon: CheckSquare },
+  { href: "/objekte", label: "Objekte", icon: Building2 },
   { href: "/mieter", label: "Mieter", icon: Users },
-  { href: "/inserate", label: "Inserate", icon: Building2 },
+  { href: "/todos", label: "Todos", icon: CheckSquare },
   { href: "/datenschutz", label: "Datenschutz", icon: Shield },
 ];
 
 const mitarbeiterNavItems: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/vermieter", label: "Vermieter", icon: UserCircle },
-  { href: "/partner", label: "Partner", icon: Handshake },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/emails", label: "E-Mails", icon: Mail },
+  { href: "/objekte", label: "Objekte", icon: Building2 },
+  { href: "/partner", label: "Partner", icon: Handshake },
+  { href: "/mieter", label: "Mieter", icon: Users },
+  { href: "/chat", label: "KI-Assistent", icon: MessageSquare },
+  { href: "/todos", label: "Todos", icon: CheckSquare },
+];
+
+const mitarbeiterSecondaryNav: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/vermieter", label: "Vermieter", icon: UserCircle },
+  { href: "/datenschutz", label: "Datenschutz", icon: Shield },
 ];
 
 export default function MobileNavDrawer({
@@ -40,9 +50,34 @@ export default function MobileNavDrawer({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = showMitarbeiterNav
-    ? [...baseNavItems.slice(0, 4), ...mitarbeiterNavItems, ...baseNavItems.slice(4)]
-    : baseNavItems;
+  const primaryItems = showMitarbeiterNav
+    ? mitarbeiterNavItems
+    : eigentuemerNavItems;
+  const secondaryItems = showMitarbeiterNav ? mitarbeiterSecondaryNav : [];
+
+  function renderNavItem(item: { href: string; label: string; icon: LucideIcon }) {
+    const isActive =
+      pathname === item.href ||
+      (item.href !== "/dashboard" && pathname.startsWith(item.href));
+    const Icon = item.icon;
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex items-center gap-3 border-l-2 px-4 py-2.5 text-[13px] transition-colors",
+            isActive
+              ? "border-gold bg-navy-mid/50 text-gold"
+              : "border-transparent text-white/65 hover:bg-navy-mid/30 hover:text-white",
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+          {item.label}
+        </Link>
+      </li>
+    );
+  }
 
   return (
     <>
@@ -79,32 +114,14 @@ export default function MobileNavDrawer({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex-1 px-3 py-4">
-          <ul className="space-y-1">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
-              const Icon = item.icon;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 border-l-2 px-4 py-2.5 text-[13px] transition-colors",
-                      isActive
-                        ? "border-gold bg-navy-mid/50 text-gold"
-                        : "border-transparent text-white/65 hover:bg-navy-mid/30 hover:text-white",
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <ul className="space-y-1">{primaryItems.map(renderNavItem)}</ul>
+          {secondaryItems.length > 0 && (
+            <>
+              <div className="my-4 border-t border-white/10" />
+              <ul className="space-y-1">{secondaryItems.map(renderNavItem)}</ul>
+            </>
+          )}
         </nav>
       </aside>
     </>

@@ -17,7 +17,7 @@ export default function InserateSearchInput() {
       } else {
         params.delete("q");
       }
-      router.push(`/inserate?${params.toString()}`);
+      router.push(`/objekte?${params.toString()}`);
     },
     [router, searchParams],
   );

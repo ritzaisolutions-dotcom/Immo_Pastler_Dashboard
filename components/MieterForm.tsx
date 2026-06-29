@@ -125,7 +125,7 @@ export default function MieterForm({
       {!hasInserate && (
         <p className="rounded-[4px] border border-border bg-warm-white px-3 py-2 text-sm text-text-secondary">
           Noch kein Inserat angelegt.{" "}
-          <Link href="/inserate/neu" className="text-navy hover:text-gold">
+          <Link href="/objekte/neu" className="text-navy hover:text-gold">
             Zuerst Inserat anlegen
           </Link>
         </p>

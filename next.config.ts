@@ -55,6 +55,30 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/inserate",
+        destination: "/objekte",
+        permanent: true,
+      },
+      {
+        source: "/inserate/:path*",
+        destination: "/objekte/:path*",
+        permanent: true,
+      },
+      {
+        source: "/api/inserate",
+        destination: "/api/objekte",
+        permanent: true,
+      },
+      {
+        source: "/api/inserate/:path*",
+        destination: "/api/objekte/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

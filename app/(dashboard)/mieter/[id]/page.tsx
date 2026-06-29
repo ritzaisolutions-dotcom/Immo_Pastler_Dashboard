@@ -119,7 +119,7 @@ export default async function MieterDetailPage({ params }: MieterDetailPageProps
                 label: "Inserat (Objekt)",
                 value: mieter.inserat ? (
                   <Link
-                    href={`/inserate/${mieter.inserat.id}`}
+                    href={`/objekte/${mieter.inserat.id}`}
                     className="text-navy hover:text-gold"
                   >
                     {mieter.inserat.adresse}

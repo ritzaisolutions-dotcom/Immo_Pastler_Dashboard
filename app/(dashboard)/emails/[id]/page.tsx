@@ -209,7 +209,7 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
                   <dt className="text-text-hint">Inserat</dt>
                   <dd>
                     <Link
-                      href={`/inserate/${inserat.id}`}
+                      href={`/objekte/${inserat.id}`}
                       className="text-navy hover:text-gold"
                     >
                       {inserat.adresse}

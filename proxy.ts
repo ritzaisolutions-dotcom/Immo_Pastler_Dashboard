@@ -2,6 +2,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   API_WRITE_RATE_LIMIT,
+  CHAT_API_RATE_LIMIT,
+  isChatApiRoute,
   isProtectedApiRoute,
   isRateLimitedApiWrite,
 } from "@/lib/rate-limit-paths";
@@ -17,11 +19,13 @@ const protectedPaths = [
   "/dashboard",
   "/todos",
   "/mieter",
+  "/objekte",
   "/inserate",
   "/vermieter",
   "/datenschutz",
   "/partner",
   "/emails",
+  "/chat",
 ];
 
 function isProtectedPath(pathname: string): boolean {
@@ -78,8 +82,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/api/partner-nachrichten") ||
     pathname.startsWith("/api/emails") ||
     pathname.startsWith("/emails") ||
-    pathname.startsWith("/inserate/neu") ||
-    pathname.match(/^\/inserate\/[^/]+\/bearbeiten$/) ||
+    pathname.startsWith("/objekte/neu") ||
+    pathname.match(/^\/objekte\/[^/]+\/bearbeiten$/) ||
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/api/chat") ||
     pathname.startsWith("/mieter/neu") ||
     pathname.match(/^\/mieter\/[^/]+\/bearbeiten$/);
 
@@ -90,6 +96,23 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  if (isChatApiRoute(pathname, request.method) && user) {
+    const chatLimited = rateLimit(
+      `chat:user:${user.id}`,
+      CHAT_API_RATE_LIMIT.limit,
+      CHAT_API_RATE_LIMIT.windowMs,
+    );
+    if (!chatLimited.ok) {
+      return NextResponse.json(
+        { error: "Zu viele Chat-Anfragen. Bitte kurz warten." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(chatLimited.retryAfterSec) },
+        },
+      );
+    }
   }
 
   if (isRateLimitedApiWrite(pathname, request.method)) {
@@ -143,6 +166,10 @@ export const config = {
     "/todos/:path*",
     "/mieter",
     "/mieter/:path*",
+    "/objekte",
+    "/objekte/:path*",
+    "/chat",
+    "/chat/:path*",
     "/inserate",
     "/inserate/:path*",
     "/datenschutz",
@@ -160,6 +187,10 @@ export const config = {
     "/api/partner-nachrichten/:path*",
     "/api/emails",
     "/api/emails/:path*",
+    "/api/objekte",
+    "/api/objekte/:path*",
+    "/api/chat",
+    "/api/gewerke",
     "/api/inserate",
     "/api/inserate/:path*",
     "/api/mieter",

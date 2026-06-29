@@ -37,7 +37,7 @@ export default async function InseratBearbeitenPage({
 
   return (
     <div>
-      <PageHeader title="Inserat bearbeiten" subtitle={inserat.adresse} />
+      <PageHeader title="Objekt bearbeiten" subtitle={inserat.adresse} />
       <Card>
         <CardBody>
           <InseratForm inserat={inserat} vermieter={vermieter} />

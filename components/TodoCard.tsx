@@ -116,7 +116,7 @@ export default function TodoCard({
             <span>
               Inserat:{" "}
               <Link
-                href={`/inserate/${inseratId}`}
+                href={`/objekte/${inseratId}`}
                 className="text-navy hover:text-gold"
               >
                 {inserat.adresse}

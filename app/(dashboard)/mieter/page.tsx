@@ -14,11 +14,15 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui/DataTable";
-import { type MieterWithInserat } from "@/lib/types";
+import { splitName, type MieterWithInserat } from "@/lib/types";
 
 interface MieterPageProps {
   searchParams: Promise<{ q?: string }>;
 }
+
+type MieterRow = MieterWithInserat & {
+  wohneinheit: { nummer: string } | null;
+};
 
 export default async function MieterPage({ searchParams }: MieterPageProps) {
   const { q } = await searchParams;
@@ -30,7 +34,9 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
 
   let query = supabase
     .from(TABLES.mieter)
-    .select(`*, inserat:${TABLES.inserate}(adresse, stadt)`)
+    .select(
+      `*, inserat:${TABLES.inserate}(adresse, stadt), wohneinheit:${TABLES.wohneinheiten}(nummer)`,
+    )
     .order("name", { ascending: true });
 
   if (q) {
@@ -38,7 +44,7 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
   }
 
   const { data: mieterList } = await query;
-  const mieter = (mieterList ?? []) as MieterWithInserat[];
+  const mieter = (mieterList ?? []) as MieterRow[];
 
   const openTodoCounts = await Promise.all(
     mieter.map(async (m) => {
@@ -76,57 +82,67 @@ export default async function MieterPage({ searchParams }: MieterPageProps) {
       ) : (
         <DataTable>
           <TableHead>
-            <TableHeaderCell>Name</TableHeaderCell>
-            <TableHeaderCell>E-Mail</TableHeaderCell>
-            <TableHeaderCell>Inserat</TableHeaderCell>
+            <TableHeaderCell>Vorname</TableHeaderCell>
+            <TableHeaderCell>Nachname</TableHeaderCell>
+            <TableHeaderCell>E-Mail (Match-Key)</TableHeaderCell>
+            <TableHeaderCell>Wohnung</TableHeaderCell>
+            <TableHeaderCell>Objekt</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
             <TableHeaderCell>Offene Todos</TableHeaderCell>
           </TableHead>
           <TableBody>
-            {mieter.map((m, index) => (
-              <TableRow key={m.id}>
-                <TableCell>
-                  <Link
-                    href={`/mieter/${m.id}`}
-                    className="font-medium text-navy hover:text-gold"
-                  >
-                    {m.name}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  {m.email ?? "—"}
-                </TableCell>
-                <TableCell className="text-text-secondary">
-                  {m.inserat ? (
+            {mieter.map((m, index) => {
+              const { vorname, nachname } = splitName(m.name);
+              const wohnung =
+                m.wohneinheit?.nummer ?? m.einheit_nr ?? "—";
+              return (
+                <TableRow key={m.id}>
+                  <TableCell>
                     <Link
-                      href={`/inserate/${m.inserat_id}`}
-                      className="text-navy hover:text-gold"
+                      href={`/mieter/${m.id}`}
+                      className="font-medium text-navy hover:text-gold"
                     >
-                      {m.inserat.adresse}
-                      {m.inserat.stadt ? `, ${m.inserat.stadt}` : ""}
-                      {m.einheit_nr ? ` · ${m.einheit_nr}` : ""}
+                      {vorname || "—"}
                     </Link>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={{ type: "mieterStatus", value: m.status }} />
-                </TableCell>
-                <TableCell>
-                  {openTodoCounts[index] > 0 ? (
-                    <Link
-                      href={`/todos?mieter_id=${m.id}`}
-                      className="inline-block rounded-[4px] bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning hover:opacity-90"
-                    >
-                      {openTodoCounts[index]}
-                    </Link>
-                  ) : (
-                    <span className="text-text-hint">0</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {nachname || "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.email ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">{wohnung}</TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.inserat && m.inserat_id ? (
+                      <Link
+                        href={`/objekte/${m.inserat_id}`}
+                        className="text-navy hover:text-gold"
+                      >
+                        {m.inserat.adresse}
+                        {m.inserat.stadt ? `, ${m.inserat.stadt}` : ""}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={{ type: "mieterStatus", value: m.status }} />
+                  </TableCell>
+                  <TableCell>
+                    {openTodoCounts[index] > 0 ? (
+                      <Link
+                        href={`/todos?mieter_id=${m.id}`}
+                        className="inline-block rounded-[4px] bg-gold-pale px-2 py-0.5 text-xs font-medium text-warning hover:opacity-90"
+                      >
+                        {openTodoCounts[index]}
+                      </Link>
+                    ) : (
+                      <span className="text-text-hint">0</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </DataTable>
       )}

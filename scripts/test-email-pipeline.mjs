@@ -7,7 +7,7 @@
  * Nur Auswertung:
  *   node scripts/test-email-pipeline.mjs
  *
- * Empfänger-Inbox (n8n IMAP): marco@ritz-ai.solutions
+ * Empfänger-Inbox (n8n IMAP): PIPELINE_TEST_INBOX in .env.local setzen
  */
 
 import fs from "node:fs";
@@ -35,7 +35,7 @@ loadEnvFile(".env.local");
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const INBOX = process.env.PIPELINE_TEST_INBOX ?? "marco@ritz-ai.solutions";
+const INBOX = process.env.PIPELINE_TEST_INBOX;
 const shouldSend = process.argv.includes("--send");
 
 const TEST_EMAILS = [
@@ -89,6 +89,10 @@ async function sendTestEmails() {
   const host = process.env.SMTP_HOST;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  if (!INBOX) {
+    console.error("PIPELINE_TEST_INBOX in .env.local setzen (n8n IMAP-Postfach).");
+    process.exit(1);
+  }
   if (!host || !user || !pass) {
     console.error(
       "SMTP nicht konfiguriert. Setze SMTP_HOST, SMTP_USER, SMTP_PASS in .env und starte mit --send.",

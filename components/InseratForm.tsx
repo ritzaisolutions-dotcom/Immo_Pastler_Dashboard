@@ -45,7 +45,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
     if (!imageFile) return;
     const formData = new FormData();
     formData.append("file", imageFile);
-    const res = await fetch(`/api/inserate/${inseratId}/bild`, {
+    const res = await fetch(`/api/objekte/${inseratId}/bild`, {
       method: "POST",
       body: formData,
     });
@@ -79,7 +79,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
       let targetId: string;
 
       if (isEdit) {
-        const res = await fetch(`/api/inserate/${inserat!.id}`, {
+        const res = await fetch(`/api/objekte/${inserat!.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -90,7 +90,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
         }
         targetId = inserat!.id;
       } else {
-        const res = await fetch("/api/inserate", {
+        const res = await fetch("/api/objekte", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -110,14 +110,14 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
           toast.warning(
             "Inserat gespeichert, aber Bild-Upload fehlgeschlagen. Sie können das Bild auf der Bearbeiten-Seite erneut hochladen.",
           );
-          router.push(`/inserate/${targetId}/bearbeiten`);
+          router.push(`/objekte/${targetId}/bearbeiten`);
           router.refresh();
           return;
         }
       }
 
       toast.success(isEdit ? "Inserat aktualisiert" : "Inserat angelegt");
-      router.push(`/inserate/${targetId}`);
+      router.push(`/objekte/${targetId}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen");
@@ -235,7 +235,7 @@ export default function InseratForm({ inserat, vermieter }: InseratFormProps) {
           type="button"
           variant="secondary"
           onClick={() =>
-            router.push(isEdit ? `/inserate/${inserat!.id}` : "/inserate")
+            router.push(isEdit ? `/objekte/${inserat!.id}` : "/objekte")
           }
         >
           Abbrechen

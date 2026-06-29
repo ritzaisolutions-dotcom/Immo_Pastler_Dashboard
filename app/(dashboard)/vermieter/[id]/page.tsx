@@ -138,7 +138,7 @@ export default async function VermieterDetailPage({ params }: VermieterDetailPag
                       <TableCell className="text-text-secondary">
                         {objekt ? (
                           <Link
-                            href={`/inserate/${objekt.id}`}
+                            href={`/objekte/${objekt.id}`}
                             className="text-navy hover:text-gold"
                           >
                             {objekt.adresse}
@@ -199,7 +199,7 @@ export default async function VermieterDetailPage({ params }: VermieterDetailPag
                   <TableRow key={i.id}>
                     <TableCell>
                       <Link
-                        href={`/inserate/${i.id}`}
+                        href={`/objekte/${i.id}`}
                         className="font-medium text-navy hover:text-gold"
                       >
                         {i.adresse}

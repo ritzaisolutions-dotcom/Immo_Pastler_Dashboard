@@ -1,18 +1,11 @@
-import Link from "next/link";
 import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
 import { TABLES } from "@/lib/supabase/tables";
-import ZuordnungBadge from "@/components/ZuordnungBadge";
+import EmailMasterTable, {
+  type EmailMasterRow,
+} from "@/components/EmailMasterTable";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import {
-  DataTable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/components/ui/DataTable";
-import { type Email } from "@/lib/types";
+import { type Email, type TodoStatus } from "@/lib/types";
 
 export default async function EmailsPage() {
   const { supabase } = await requireMitarbeiterPage();
@@ -25,100 +18,61 @@ export default async function EmailsPage() {
 
   const emailList = (emails ?? []) as Email[];
 
-  const todoByEmail = new Map<
-    string,
-    { id: string; titel: string; mieter_id: string | null; inserat_id: string | null }
-  >();
+  const { data: mieterList } = await supabase
+    .from(TABLES.mieter)
+    .select("id, name, email");
+
+  type MieterLookup = { id: string; name: string; email: string | null };
+  const mieterRows = (mieterList ?? []) as MieterLookup[];
+
+  const mieterByEmail = new Map<string, MieterLookup>();
+  for (const m of mieterRows) {
+    if (m.email) mieterByEmail.set(m.email.toLowerCase(), m);
+  }
+
+  const todoStatusByEmail = new Map<string, TodoStatus>();
+
   if (emailList.length > 0) {
     const emailIds = emailList.map((e) => e.id);
     const { data: todos } = await supabase
       .from(TABLES.todos)
-      .select("id, titel, email_id, mieter_id, inserat_id")
+      .select("email_id, status, mieter_id")
       .in("email_id", emailIds);
 
     for (const t of todos ?? []) {
-      if (t.email_id && !todoByEmail.has(t.email_id)) {
-        todoByEmail.set(t.email_id, {
-          id: t.id,
-          titel: t.titel,
-          mieter_id: t.mieter_id,
-          inserat_id: t.inserat_id,
-        });
+      if (t.email_id && !todoStatusByEmail.has(t.email_id)) {
+        todoStatusByEmail.set(t.email_id, t.status as TodoStatus);
       }
     }
   }
+
+  const rows: EmailMasterRow[] = emailList.map((email) => {
+    let mieterName: string | null = null;
+    if (email.mieter_id) {
+      const m = mieterRows.find((x) => x.id === email.mieter_id);
+      mieterName = m?.name ?? null;
+    } else {
+      const m = mieterByEmail.get(email.von_email.toLowerCase());
+      mieterName = m?.name ?? null;
+    }
+    return {
+      ...email,
+      todo_status: todoStatusByEmail.get(email.id) ?? null,
+      mieter_name: mieterName,
+    };
+  });
 
   return (
     <div>
       <PageHeader
         title="E-Mails"
-        subtitle="Volltext nur für Mitarbeiter (DSGVO)"
+        subtitle="Klicken Sie auf eine Zeile, um den vollständigen Inhalt anzuzeigen"
       />
 
-      {emailList.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState>Keine E-Mails vorhanden</EmptyState>
       ) : (
-        <DataTable>
-          <TableHead>
-            <TableHeaderCell>Empfangen</TableHeaderCell>
-            <TableHeaderCell>Von</TableHeaderCell>
-            <TableHeaderCell>Betreff</TableHeaderCell>
-            <TableHeaderCell>Zuordnung</TableHeaderCell>
-            <TableHeaderCell>Todo</TableHeaderCell>
-          </TableHead>
-          <TableBody>
-            {emailList.map((email) => {
-              const todo = todoByEmail.get(email.id);
-              return (
-                <TableRow key={email.id}>
-                  <TableCell className="text-text-secondary">
-                    {new Date(email.empfangen_at).toLocaleString("de-DE")}
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/emails/${email.id}`}
-                      className="font-medium text-navy hover:text-gold"
-                    >
-                      {email.von_name ?? email.von_email}
-                    </Link>
-                    <p className="text-xs text-text-hint">{email.von_email}</p>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {email.betreff ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    {email.zuordnung_quelle ? (
-                      <ZuordnungBadge
-                        quelle={email.zuordnung_quelle}
-                        konfidenz={email.zuordnung_konfidenz}
-                      />
-                    ) : (
-                      <span className="text-text-hint">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {todo ? (
-                      <Link
-                        href={
-                          todo.mieter_id
-                            ? `/todos?mieter_id=${todo.mieter_id}`
-                            : todo.inserat_id
-                              ? `/todos?inserat_id=${todo.inserat_id}`
-                              : "/todos"
-                        }
-                        className="text-sm text-navy hover:text-gold"
-                      >
-                        {todo.titel}
-                      </Link>
-                    ) : (
-                      <span className="text-text-hint">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </DataTable>
+        <EmailMasterTable emails={rows} />
       )}
     </div>
   );

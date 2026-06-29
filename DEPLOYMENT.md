@@ -13,6 +13,8 @@ Pastler tables are prefixed: `pastler_inserate`, `pastler_mieter`, `pastler_todo
 | `NEXT_PUBLIC_SUPABASE_URL` | All (`https://htyeflqymmbcjhvknjoe.supabase.co`) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Server-only** |
+| `MISTRAL_API_KEY` | **Server-only** — KI-Assistent `/chat` (Mistral EU, `mistral-small-latest`) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | **Server-only** — Partner-E-Mail-Versand |
 | `NEXT_PUBLIC_SITE_URL` | Production: `https://immo-pastler-dashboard.vercel.app` |
 
 3. Redeploy after setting env vars: `vercel deploy --prod`

@@ -3,23 +3,32 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import GewerkSelect from "@/components/GewerkSelect";
 import FormErrorBanner from "@/components/FormErrorBanner";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import {
-  PARTNER_GEWERKE,
-  gewerkLabel,
+  anredeFormLabel,
+  type Gewerk,
+  type Inserat,
   type Partner,
-  type PartnerGewerk,
+  type PartnerAnredeForm,
 } from "@/lib/types";
 
 interface PartnerFormProps {
   partner?: Partner;
+  objekte?: Pick<Inserat, "id" | "adresse" | "stadt">[];
+  selectedObjektIds?: string[];
+  gewerke: Gewerk[];
 }
 
-export default function PartnerForm({ partner }: PartnerFormProps) {
+export default function PartnerForm({
+  partner,
+  objekte = [],
+  selectedObjektIds = [],
+  gewerke: initialGewerke,
+}: PartnerFormProps) {
   const router = useRouter();
   const isEdit = Boolean(partner);
   const [loading, setLoading] = useState(false);
@@ -32,10 +41,18 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
   const [stadt, setStadt] = useState(partner?.stadt ?? "");
   const [email, setEmail] = useState(partner?.email ?? "");
   const [telefon, setTelefon] = useState(partner?.telefon ?? "");
-  const [gewerk, setGewerk] = useState<PartnerGewerk>(partner?.gewerk ?? "allgemein");
+  const [gewerke, setGewerke] = useState(initialGewerke);
+  const [gewerk, setGewerk] = useState(partner?.gewerk ?? "allgemein");
   const [beschreibung, setBeschreibung] = useState(partner?.beschreibung ?? "");
   const [notizen, setNotizen] = useState(partner?.notizen ?? "");
   const [aktiv, setAktiv] = useState(partner?.aktiv ?? true);
+  const [anredeForm, setAnredeForm] = useState<PartnerAnredeForm>(
+    partner?.anrede_form ?? "sie",
+  );
+  const [einsatzgebiet, setEinsatzgebiet] = useState(
+    partner?.einsatzgebiet ?? "",
+  );
+  const [objektIds, setObjektIds] = useState<string[]>(selectedObjektIds);
 
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
@@ -54,6 +71,9 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
       beschreibung,
       notizen,
       aktiv,
+      anrede_form: anredeForm,
+      einsatzgebiet: einsatzgebiet || null,
+      objekt_ids: objektIds,
     };
 
     const url = isEdit ? `/api/partner/${partner!.id}` : "/api/partner";
@@ -136,17 +156,67 @@ export default function PartnerForm({ partner }: PartnerFormProps) {
         />
       </div>
 
-      <Select
-        label="Gewerk *"
+      <GewerkSelect
+        label="Gewerk"
+        required
         value={gewerk}
-        onChange={(e) => setGewerk(e.target.value as PartnerGewerk)}
-      >
-        {PARTNER_GEWERKE.map((g) => (
-          <option key={g} value={g}>
-            {gewerkLabel(g)}
-          </option>
-        ))}
-      </Select>
+        onChange={setGewerk}
+        gewerke={gewerke}
+        onGewerkeChange={setGewerke}
+      />
+
+      <Input
+        label="Einsatzgebiet"
+        value={einsatzgebiet}
+        onChange={(e) => setEinsatzgebiet(e.target.value)}
+        placeholder="z. B. Koblenz, Mayen"
+      />
+
+      <div>
+        <span className="mb-2 block text-sm font-medium text-text-primary">
+          Anrede
+        </span>
+        <div className="flex gap-4">
+          {(["sie", "du"] as PartnerAnredeForm[]).map((form) => (
+            <label key={form} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="anrede_form"
+                checked={anredeForm === form}
+                onChange={() => setAnredeForm(form)}
+              />
+              {anredeFormLabel(form)} ({form === "sie" ? "formell" : "informell"})
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {objekte.length > 0 && (
+        <div>
+          <span className="mb-2 block text-sm font-medium text-text-primary">
+            Einsatzobjekte
+          </span>
+          <div className="space-y-2 rounded-[4px] border border-border p-3">
+            {objekte.map((o) => (
+              <label key={o.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={objektIds.includes(o.id)}
+                  onChange={(e) => {
+                    setObjektIds((prev) =>
+                      e.target.checked
+                        ? [...prev, o.id]
+                        : prev.filter((id) => id !== o.id),
+                    );
+                  }}
+                />
+                {o.adresse}
+                {o.stadt ? `, ${o.stadt}` : ""}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Textarea
         label="Beschreibung"
