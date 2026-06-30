@@ -8,12 +8,22 @@ type MieterBody = {
   plz?: unknown;
   stadt?: unknown;
   einheit_nr?: unknown;
+  wohneinheit_id?: unknown;
   inserat_id?: unknown;
   einzug_datum?: unknown;
   auszug_datum?: unknown;
   status?: unknown;
   notizen?: unknown;
 };
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function uuidOrNull(v: unknown): string | null {
+  if (typeof v !== "string" || !v.trim()) return null;
+  const trimmed = v.trim();
+  return UUID_RE.test(trimmed) ? trimmed : null;
+}
 
 export function parseMieterBody(body: MieterBody) {
   if (typeof body.name !== "string" || !body.name.trim()) {
@@ -36,6 +46,11 @@ export function parseMieterBody(body: MieterBody) {
   }
 
   const inserat_id = body.inserat_id.trim();
+  const wohneinheit_id = uuidOrNull(body.wohneinheit_id);
+
+  if (body.wohneinheit_id != null && body.wohneinheit_id !== "" && !wohneinheit_id) {
+    return { error: "Ungültige Wohneinheit" as const };
+  }
 
   const trimOrNull = (v: unknown) =>
     typeof v === "string" ? v.trim() || null : null;
@@ -52,6 +67,7 @@ export function parseMieterBody(body: MieterBody) {
       plz: trimOrNull(body.plz),
       stadt: trimOrNull(body.stadt),
       einheit_nr: trimOrNull(body.einheit_nr),
+      wohneinheit_id,
       inserat_id,
       einzug_datum: dateOrNull(body.einzug_datum),
       auszug_datum: dateOrNull(body.auszug_datum),

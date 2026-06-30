@@ -33,6 +33,7 @@ export function isChatApiRoute(pathname: string, method: string): boolean {
 
 export function isRateLimitedApiWrite(pathname: string, method: string): boolean {
   if (!WRITE_METHODS.has(method)) return false;
+  if (isChatApiRoute(pathname, method)) return false;
   return RATE_LIMITED_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

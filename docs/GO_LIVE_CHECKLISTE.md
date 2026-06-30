@@ -81,7 +81,7 @@ Supabase → **Authentication → URL Configuration**:
 **Mitarbeiter anlegen** (Supabase → Users oder CLI):
 
 - [ ] Jeder Mitarbeiter: `app_metadata.role = "mitarbeiter"`
-- [ ] Test-Login im Dashboard erfolgreich
+- [ ] Migration **017** (`017_drop_rueckmeldung_watches.sql`) angewendet, falls **016** zuvor live war
 - [ ] Optional: Eigentümer mit `app_metadata.role = "eigentuemer"` + `eigentuemer_id` (nur Leserechte)
 
 > Demo-Daten (`supabase/seed.sql`) **nicht** in Produktion übernehmen — nur für Sales-Demo. Produktion startet mit leeren oder echten Stammdaten (Abschnitt 5).
@@ -265,6 +265,8 @@ Route: **`/partner/neu`**
 | 4 | E-Mail-Zuordnung manuell korrigieren | `/emails/[id]` → Zuordnung speichern | ☐ |
 | 5 | Eigentümer-Login (falls genutzt) | Sieht nur eigene Objekte, **kein** `/partner`, **kein** E-Mail-Volltext | ☐ |
 | 6 | Duplikat-E-Mail | Kein zweites Todo | ☐ |
+| 7 | Manuelles Todo | `/todos/neu` → erscheint in Liste | ☐ |
+| 8 | Partner senden | E-Mail beim Partner, Status `gesendet` | ☐ |
 
 ### 6.2 Technische Abschluss-Checks
 
@@ -298,6 +300,7 @@ npm run build
 |---------|-----|
 | E-Mails **empfangen** & Todos erzeugen | n8n + IMAP → Supabase |
 | E-Mails an Partner **senden** | Dashboard `/todos` → SMTP (Vercel) |
+| Todos **manuell anlegen** | Dashboard `/todos/neu` |
 | Vermieter / Mieter / Partner / Inserate pflegen | Dashboard CRUD |
 | Mitarbeiter-Login | Supabase Auth |
 | Domain | Vercel + DNS |

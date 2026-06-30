@@ -10,13 +10,18 @@ type ChatMessage = {
   content: string;
 };
 
+const WELCOME_MESSAGE =
+  "Guten Tag! Ich bin Ihr KI-Assistent für die Pastler-Verwaltung. Wie kann ich Ihnen helfen?";
+
+function toApiMessages(messages: ChatMessage[]): ChatMessage[] {
+  const firstUserIndex = messages.findIndex((m) => m.role === "user");
+  if (firstUserIndex === -1) return [];
+  return messages.slice(firstUserIndex);
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Guten Tag! Ich bin Ihr KI-Assistent für die Pastler-Verwaltung. Wie kann ich Ihnen helfen?",
-    },
+    { role: "assistant", content: WELCOME_MESSAGE },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,38 +46,39 @@ export default function ChatPage() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: nextMessages }),
-    });
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: toApiMessages(nextMessages) }),
+      });
 
-    if (!res.ok) {
-      let message = "Anfrage fehlgeschlagen";
-      try {
-        const data = (await res.json()) as { error?: string };
-        message = data.error ?? message;
-      } catch {
-        // ignore
+      if (!res.ok) {
+        let message = "Anfrage fehlgeschlagen";
+        try {
+          const data = (await res.json()) as { error?: string };
+          message = data.error ?? message;
+        } catch {
+          // ignore
+        }
+        setError(message);
+        return;
       }
-      setError(message);
-      setLoading(false);
-      return;
-    }
 
-    const data = (await res.json()) as { content: string };
-    setMessages([
-      ...nextMessages,
-      { role: "assistant", content: data.content },
-    ]);
-    setLoading(false);
+      const data = (await res.json()) as { content: string };
+      setMessages([
+        ...nextMessages,
+        { role: "assistant", content: data.content },
+      ]);
+    } catch {
+      setError("Netzwerkfehler — bitte erneut versuchen");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div
-      className="mx-auto flex max-w-3xl flex-col"
-      style={{ height: "calc(100vh - 5rem)" }}
-    >
+    <div className="mx-auto flex h-full min-h-0 max-w-3xl flex-col">
       <PageHeader
         title="KI-Assistent"
         subtitle="Fragen zu Objekten, Mietern, Partnern und Todos"

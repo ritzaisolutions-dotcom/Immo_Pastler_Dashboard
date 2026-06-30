@@ -2,10 +2,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   API_WRITE_RATE_LIMIT,
-  CHAT_API_RATE_LIMIT,
-  isChatApiRoute,
-  isProtectedApiRoute,
   isRateLimitedApiWrite,
+  isProtectedApiRoute,
 } from "@/lib/rate-limit-paths";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -87,7 +85,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/chat") ||
     pathname.startsWith("/api/chat") ||
     pathname.startsWith("/mieter/neu") ||
-    pathname.match(/^\/mieter\/[^/]+\/bearbeiten$/);
+    pathname.match(/^\/mieter\/[^/]+\/bearbeiten$/) ||
+    pathname.startsWith("/todos/neu");
 
   if (user && isMitarbeiterOnlyRoute && !isMitarbeiter(user)) {
     if (pathname.startsWith("/api/")) {
@@ -96,23 +95,6 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
-  }
-
-  if (isChatApiRoute(pathname, request.method) && user) {
-    const chatLimited = rateLimit(
-      `chat:user:${user.id}`,
-      CHAT_API_RATE_LIMIT.limit,
-      CHAT_API_RATE_LIMIT.windowMs,
-    );
-    if (!chatLimited.ok) {
-      return NextResponse.json(
-        { error: "Zu viele Chat-Anfragen. Bitte kurz warten." },
-        {
-          status: 429,
-          headers: { "Retry-After": String(chatLimited.retryAfterSec) },
-        },
-      );
-    }
   }
 
   if (isRateLimitedApiWrite(pathname, request.method)) {
@@ -179,6 +161,7 @@ export const config = {
     "/vermieter/:path*",
     "/emails",
     "/emails/:path*",
+    "/api/todos",
     "/api/todos/:path*",
     "/api/partner",
     "/api/partner/:path*",

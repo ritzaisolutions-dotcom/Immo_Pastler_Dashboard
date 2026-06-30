@@ -11,6 +11,17 @@ Gib keine personenbezogenen Daten aus E-Mails oder Mieterstammdaten wieder, wenn
 
 const MISTRAL_CHAT_URL = "https://api.mistral.ai/v1/chat/completions";
 const MISTRAL_MODEL = "mistral-small-latest";
+const MISTRAL_TIMEOUT_MS = 60_000;
+
+function mistralErrorMessage(status: number): string {
+  if (status === 401 || status === 403) {
+    return "MISTRAL_API_KEY ungültig oder abgelaufen — bitte in Vercel/.env.local prüfen";
+  }
+  if (status === 429) {
+    return "Mistral-Limit erreicht — bitte kurz warten";
+  }
+  return "KI-Anfrage fehlgeschlagen";
+}
 
 export async function POST(request: Request) {
   const auth = await requireMitarbeiter();
@@ -45,6 +56,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MISTRAL_TIMEOUT_MS);
+
   try {
     const response = await fetch(MISTRAL_CHAT_URL, {
       method: "POST",
@@ -60,12 +74,14 @@ export async function POST(request: Request) {
           ...parsed.messages,
         ],
       }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
+      const status = response.status;
       return NextResponse.json(
-        { error: "KI-Anfrage fehlgeschlagen" },
-        { status: 502 },
+        { error: mistralErrorMessage(status) },
+        { status: status === 401 || status === 403 ? 503 : 502 },
       );
     }
 
@@ -75,16 +91,24 @@ export async function POST(request: Request) {
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
       return NextResponse.json(
-        { error: "KI-Anfrage fehlgeschlagen" },
+        { error: "KI-Anfrage fehlgeschlagen — leere Antwort" },
         { status: 502 },
       );
     }
 
     return NextResponse.json({ content });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return NextResponse.json(
+        { error: "KI-Anfrage hat zu lange gedauert — bitte erneut versuchen" },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       { error: "KI-Anfrage fehlgeschlagen" },
       { status: 502 },
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }

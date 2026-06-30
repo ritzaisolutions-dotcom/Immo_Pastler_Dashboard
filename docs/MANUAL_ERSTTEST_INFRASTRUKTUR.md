@@ -96,8 +96,8 @@ Als **Mitarbeiter** einloggen.
 
 | # | Route | Was prüfen | OK |
 |---|-------|------------|-----|
-| 1 | `/dashboard` | StatCards > 0, letzte Todos mit Mieter-Namen | ☐ |
-| 2 | `/emails` | Liste lädt; Zeile **aufklappen** → Volltext, Status, Mieter-Badge | ☐ |
+| 1 | `/dashboard` | StatCards (Todos, Priorität, Fällig, Mieter); aktuelle Todos | ☐ |
+| 2 | `/emails` | Liste lädt; Zeile aufklappen; Link zur Zuordnung | ☐ |
 | 3 | `/objekte` | **3** Koblenz-Objekte im Grid | ☐ |
 | 4 | `/objekte/[id]` | Je 2 Wohneinheiten; Partner-Dropdowns pro Gewerk | ☐ |
 | 5 | `/partner` | Partner öffnen: Sie/Du, Einsatzgebiet, Objekt-Zuordnung | ☐ |
@@ -105,6 +105,7 @@ Als **Mitarbeiter** einloggen.
 | 6 | `/mieter` | Spalten **Vorname \| Nachname** (z. B. Thomas \| Weber) | ☐ |
 | 7 | `/chat` | Frage: „Welche offenen Todos gibt es?“ → Antwort von Mistral | ☐ |
 | 8 | `/todos` | Status ändern; externes Todo → **Partner-Entwurf** lesen | ☐ |
+| 8b | `/todos/neu` | Manuelles Todo anlegen | ☐ |
 
 | 9 | `/vermieter` | Seite lädt | ☐ |
 | 9b | `/datenschutz` | Seite lädt | ☐ |

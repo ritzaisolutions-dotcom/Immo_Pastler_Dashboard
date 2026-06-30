@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireMitarbeiter } from "@/lib/api-auth";
 import { mapDbError } from "@/lib/api-errors";
-import { parseMieterBody } from "@/lib/parse-mieter";
-import { validateMieterWohneinheit } from "@/lib/validate-mieter-wohneinheit";
+import { parseTodoBody } from "@/lib/parse-todo";
 import { TABLES } from "@/lib/supabase/tables";
 
 export async function POST(request: Request) {
@@ -10,19 +9,14 @@ export async function POST(request: Request) {
   if ("error" in auth && auth.error) return auth.error;
 
   const body = await request.json();
-  const parsed = parseMieterBody(body);
+  const parsed = parseTodoBody(body);
   if ("error" in parsed) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const validated = await validateMieterWohneinheit(auth.supabase, parsed.data);
-  if ("error" in validated) {
-    return NextResponse.json({ error: validated.error }, { status: 400 });
-  }
-
   const { data, error } = await auth.supabase
-    .from(TABLES.mieter)
-    .insert(validated.data)
+    .from(TABLES.todos)
+    .insert(parsed.data)
     .select("id")
     .single();
 

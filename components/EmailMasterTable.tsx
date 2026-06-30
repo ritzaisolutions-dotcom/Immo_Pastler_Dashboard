@@ -58,10 +58,12 @@ export default function EmailMasterTable({ emails }: EmailMasterTableProps) {
                 }
               >
                 <TableCell>
-                  <div className="font-medium text-text-primary">
-                    {email.von_name ?? email.von_email}
+                  <div>
+                    <div className="font-medium text-text-primary">
+                      {email.von_name ?? email.von_email}
+                    </div>
+                    <div className="text-xs text-text-hint">{email.von_email}</div>
                   </div>
-                  <div className="text-xs text-text-hint">{email.von_email}</div>
                 </TableCell>
                 <TableCell className="max-w-[200px] truncate">
                   {email.betreff ?? "—"}

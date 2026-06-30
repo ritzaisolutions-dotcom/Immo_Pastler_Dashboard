@@ -1,11 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
 import { isMitarbeiter } from "@/lib/auth-roles";
 import { TABLES } from "@/lib/supabase/tables";
-import Badge from "@/components/Badge";
 import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
 import EmptyState from "@/components/ui/EmptyState";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import Badge from "@/components/Badge";
 import { formatDate, type TodoWithMieter } from "@/lib/types";
 import Link from "next/link";
 import {

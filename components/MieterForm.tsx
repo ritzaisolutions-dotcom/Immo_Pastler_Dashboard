@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -15,17 +15,20 @@ import {
   type Inserat,
   type Mieter,
   type MieterStatus,
+  type Wohneinheit,
 } from "@/lib/types";
 
 interface MieterFormProps {
   mieter?: Mieter;
   inserate: Pick<Inserat, "id" | "adresse" | "stadt">[];
+  wohneinheiten: Wohneinheit[];
   defaultInseratId?: string;
 }
 
 export default function MieterForm({
   mieter,
   inserate,
+  wohneinheiten,
   defaultInseratId,
 }: MieterFormProps) {
   const router = useRouter();
@@ -45,9 +48,51 @@ export default function MieterForm({
   const [inseratId, setInseratId] = useState(
     mieter?.inserat_id ?? defaultInseratId ?? "",
   );
+  const [wohneinheitId, setWohneinheitId] = useState(mieter?.wohneinheit_id ?? "");
   const [einzugDatum, setEinzugDatum] = useState(mieter?.einzug_datum ?? "");
   const [auszugDatum, setAuszugDatum] = useState(mieter?.auszug_datum ?? "");
   const [status, setStatus] = useState<MieterStatus>(mieter?.status ?? "aktiv");
+
+  const unitsForInserat = useMemo(
+    () =>
+      wohneinheiten
+        .filter((u) => u.inserat_id === inseratId)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [wohneinheiten, inseratId],
+  );
+
+  const showWohneinheitSelect = unitsForInserat.length > 1;
+
+  useEffect(() => {
+    if (!inseratId) {
+      setWohneinheitId("");
+      return;
+    }
+
+    if (unitsForInserat.length === 1) {
+      setWohneinheitId(unitsForInserat[0]!.id);
+      setEinheitNr(unitsForInserat[0]!.nummer);
+      return;
+    }
+
+    if (unitsForInserat.length === 0) {
+      setWohneinheitId("");
+      return;
+    }
+
+    const stillValid = unitsForInserat.some((u) => u.id === wohneinheitId);
+    if (!stillValid) {
+      setWohneinheitId("");
+    }
+  }, [inseratId, unitsForInserat, wohneinheitId]);
+
+  function handleWohneinheitChange(value: string) {
+    setWohneinheitId(value);
+    const unit = unitsForInserat.find((u) => u.id === value);
+    if (unit) {
+      setEinheitNr(unit.nummer);
+    }
+  }
 
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault();
@@ -62,6 +107,7 @@ export default function MieterForm({
       plz,
       stadt,
       einheit_nr: einheitNr,
+      wohneinheit_id: wohneinheitId || null,
       inserat_id: inseratId,
       einzug_datum: einzugDatum || null,
       auszug_datum: auszugDatum || null,
@@ -147,10 +193,28 @@ export default function MieterForm({
         ))}
       </Select>
 
+      {showWohneinheitSelect && (
+        <Select
+          label="Wohneinheit *"
+          required
+          value={wohneinheitId}
+          onChange={(e) => handleWohneinheitChange(e.target.value)}
+        >
+          <option value="">— Wohneinheit wählen —</option>
+          {unitsForInserat.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.nummer}
+              {u.bezeichnung ? ` — ${u.bezeichnung}` : ""}
+            </option>
+          ))}
+        </Select>
+      )}
+
       <Input
         label="Einheit Nr."
         value={einheitNr}
         onChange={(e) => setEinheitNr(e.target.value)}
+        disabled={showWohneinheitSelect || unitsForInserat.length === 1}
       />
 
       <p className="text-xs text-text-hint">

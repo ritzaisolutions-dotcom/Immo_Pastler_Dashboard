@@ -2,9 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireMitarbeiterPage } from "@/lib/require-mitarbeiter";
 import { TABLES } from "@/lib/supabase/tables";
-import {
-  zuordnungKonfidenzLabel,
-} from "@/lib/zuordnung";
+import { zuordnungKonfidenzLabel } from "@/lib/zuordnung";
 import ZuordnungBadge from "@/components/ZuordnungBadge";
 import ZuordnungForm, { type ZuordnungOption } from "@/components/ZuordnungForm";
 import PageHeader from "@/components/ui/PageHeader";
@@ -81,12 +79,12 @@ export default async function EmailDetailPage({ params }: EmailDetailPageProps) 
       | { vermieter_id: string | null }
       | { vermieter_id: string | null }[]
       | null;
-    const inserat = Array.isArray(inseratRaw) ? inseratRaw[0] : inseratRaw;
+    const inseratRow = Array.isArray(inseratRaw) ? inseratRaw[0] : inseratRaw;
     return {
       id: m.id,
       label: m.einheit_nr ? `${m.name} (${m.einheit_nr})` : m.name,
       inseratId: m.inserat_id,
-      vermieterId: inserat?.vermieter_id ?? null,
+      vermieterId: inseratRow?.vermieter_id ?? null,
     };
   });
 
